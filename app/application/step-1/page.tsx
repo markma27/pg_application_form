@@ -1,0 +1,118 @@
+'use client'
+
+import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { ProgressIndicator } from '@/components/ui/progress-indicator';
+
+export default function Step1Page() {
+  const router = useRouter();
+  const [selectedEntity, setSelectedEntity] = React.useState<string>('');
+
+  const entityTypes = [
+    { id: 'individual', label: 'Individual', description: 'Personal investment account' },
+    { id: 'smsf', label: 'SMSF', description: 'Self-Managed Super Fund' },
+    { id: 'company', label: 'Company', description: 'Corporate entity' },
+    { id: 'trust', label: 'Trust', description: 'Trust structure' },
+  ];
+
+  const handleNext = () => {
+    if (selectedEntity) {
+      // Store selection and navigate to next step
+      localStorage.setItem('entityType', selectedEntity);
+      router.push('/application/step-2');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 page-transition">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Image
+              src="/logo.svg"
+              alt="PortfolioGuardian Logo"
+              width={200}
+              height={200}
+              className="rounded-lg"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Progress Indicator */}
+        <ProgressIndicator totalSteps={6} currentStep={1} completedSteps={[]} />
+
+        {/* Main Content */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-portfolio-green-600 mb-2">
+              New Client Application Form
+            </h2>
+            <p className="text-gray-600">
+              Onboard new clients for investment portfolio administration and reporting service.
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Select the entity type for the application <span className="text-red-500">*</span>
+            </h3>
+
+            <div className="space-y-3">
+              {entityTypes.map((entity, index) => (
+                <div
+                  key={entity.id}
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
+                    selectedEntity === entity.id 
+                      ? 'border-portfolio-green-500 bg-portfolio-green-50' 
+                      : 'border-gray-200'
+                  }`}
+                  onClick={() => setSelectedEntity(entity.id)}
+                >
+                  <div className="flex-shrink-0 mr-4">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600">
+                      {String.fromCharCode(65 + index)}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">{entity.label}</div>
+                    <div className="text-sm text-gray-500">{entity.description}</div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      selectedEntity === entity.id 
+                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedEntity === entity.id && (
+                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleNext}
+              disabled={!selectedEntity}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                selectedEntity
+                  ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 
