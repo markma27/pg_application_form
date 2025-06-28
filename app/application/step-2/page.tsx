@@ -9,6 +9,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 export default function Step2Page() {
   const router = useRouter();
   const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
+  const [entityType, setEntityType] = React.useState<string>('');
   const [formData, setFormData] = React.useState({
     entityName: '',
     taxFileNumber: '',
@@ -18,7 +19,16 @@ export default function Step2Page() {
     streetAddress: '',
     city: '',
     state: '',
-    postCode: ''
+    postCode: '',
+    trusteeType: '',
+    trusteeIndividualFirstName: '',
+    trusteeIndividualLastName: '',
+    trusteeJointFirstName1: '',
+    trusteeJointLastName1: '',
+    trusteeJointFirstName2: '',
+    trusteeJointLastName2: '',
+    trusteeCorporateName: '',
+    trusteeCorporateACN: ''
   });
 
   // Load saved data when component mounts
@@ -26,6 +36,10 @@ export default function Step2Page() {
     const savedData = localStorage.getItem('step2Data');
     if (savedData) {
       setFormData(JSON.parse(savedData));
+    }
+    const step1Data = localStorage.getItem('step1Data');
+    if (step1Data) {
+      setEntityType(JSON.parse(step1Data));
     }
   }, []);
 
@@ -63,6 +77,18 @@ export default function Step2Page() {
     const postcodeRegex = /^\d{4}$/;
     if (!postcodeRegex.test(formData.postCode)) {
       return false;
+    }
+
+    // trustee 校验
+    if (["trust", "smsf", "foundation"].includes(entityType)) {
+      if (!formData.trusteeType) return false;
+      if (formData.trusteeType === 'individual') {
+        if (!formData.trusteeIndividualFirstName || !formData.trusteeIndividualLastName) return false;
+      } else if (formData.trusteeType === 'joint') {
+        if (!formData.trusteeJointFirstName1 || !formData.trusteeJointLastName1 || !formData.trusteeJointFirstName2 || !formData.trusteeJointLastName2) return false;
+      } else if (formData.trusteeType === 'corporate') {
+        if (!formData.trusteeCorporateName || !formData.trusteeCorporateACN) return false;
+      }
     }
 
     return true;
@@ -107,7 +133,16 @@ export default function Step2Page() {
       streetAddress: '',
       city: '',
       state: '',
-      postCode: ''
+      postCode: '',
+      trusteeType: '',
+      trusteeIndividualFirstName: '',
+      trusteeIndividualLastName: '',
+      trusteeJointFirstName1: '',
+      trusteeJointLastName1: '',
+      trusteeJointFirstName2: '',
+      trusteeJointLastName2: '',
+      trusteeCorporateName: '',
+      trusteeCorporateACN: ''
     });
     
     // Close dialog and redirect to home page
@@ -190,6 +225,83 @@ export default function Step2Page() {
               />
               <p className="mt-1 text-sm text-gray-500">This information is required for tax reporting purposes</p>
             </div>
+
+            {/* Trustee 字段（仅 trust/smsf/foundation 显示） */}
+            {['trust', 'smsf', 'foundation'].includes(entityType) && (
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Trustee Type <span className="text-red-500">*</span>
+                </label>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    className={`flex-1 p-3 border rounded-lg font-medium transition-colors ${formData.trusteeType === 'individual' ? 'border-portfolio-green-500 bg-portfolio-green-50 text-gray-900' : 'border-gray-200 text-gray-500'}`}
+                    onClick={() => handleInputChange('trusteeType', 'individual')}
+                  >
+                    Individual
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 p-3 border rounded-lg font-medium transition-colors ${formData.trusteeType === 'joint' ? 'border-portfolio-green-500 bg-portfolio-green-50 text-gray-900' : 'border-gray-200 text-gray-500'}`}
+                    onClick={() => handleInputChange('trusteeType', 'joint')}
+                  >
+                    Joint Individuals
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex-1 p-3 border rounded-lg font-medium transition-colors ${formData.trusteeType === 'corporate' ? 'border-portfolio-green-500 bg-portfolio-green-50 text-gray-900' : 'border-gray-200 text-gray-500'}`}
+                    onClick={() => handleInputChange('trusteeType', 'corporate')}
+                  >
+                    Corporate
+                  </button>
+                </div>
+                {/* Trustee 详细信息 */}
+                {formData.trusteeType === 'individual' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeIndividualFirstName} onChange={e => handleInputChange('trusteeIndividualFirstName', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter first name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeIndividualLastName} onChange={e => handleInputChange('trusteeIndividualLastName', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter last name" />
+                    </div>
+                  </div>
+                )}
+                {formData.trusteeType === 'joint' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name 1 <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeJointFirstName1} onChange={e => handleInputChange('trusteeJointFirstName1', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter first name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name 1 <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeJointLastName1} onChange={e => handleInputChange('trusteeJointLastName1', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter last name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name 2 <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeJointFirstName2} onChange={e => handleInputChange('trusteeJointFirstName2', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter first name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name 2 <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeJointLastName2} onChange={e => handleInputChange('trusteeJointLastName2', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter last name" />
+                    </div>
+                  </div>
+                )}
+                {formData.trusteeType === 'corporate' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Name <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeCorporateName} onChange={e => handleInputChange('trusteeCorporateName', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter company name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company ACN <span className="text-red-500">*</span></label>
+                      <input type="text" value={formData.trusteeCorporateACN} onChange={e => handleInputChange('trusteeCorporateACN', e.target.value)} className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors" placeholder="Enter company ACN" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ABN */}
             <div>
