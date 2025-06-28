@@ -71,7 +71,7 @@ export default function Step4Page() {
               Investment Adviser Details
             </h2>
             <p className="text-gray-600">
-              You may provide your investment adviser's information (optional).
+              You may provide your investment adviser&apos;s information (optional).
             </p>
           </div>
 
@@ -88,7 +88,7 @@ export default function Step4Page() {
                   value={formData.adviserName}
                   onChange={(e) => handleInputChange('adviserName', e.target.value)}
                   className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter adviser's name"
+                  placeholder="Enter adviser&apos;s name"
                 />
               </div>
 
