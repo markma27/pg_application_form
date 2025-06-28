@@ -10,17 +10,31 @@ export default function Step1Page() {
   const router = useRouter();
   const [selectedEntity, setSelectedEntity] = React.useState<string>('');
 
+  // Load saved data when component mounts
+  React.useEffect(() => {
+    const savedEntity = localStorage.getItem('step1Data');
+    if (savedEntity) {
+      setSelectedEntity(JSON.parse(savedEntity));
+    }
+  }, []);
+
   const entityTypes = [
     { id: 'individual', label: 'Individual', description: 'Personal investment account' },
-    { id: 'smsf', label: 'SMSF', description: 'Self-Managed Super Fund' },
+    { id: 'trust', label: 'Trust', description: 'Family trust or unit trust' },
     { id: 'company', label: 'Company', description: 'Corporate entity' },
-    { id: 'trust', label: 'Trust', description: 'Trust structure' },
+    { id: 'foundation', label: 'Foundation', description: 'Charitable or non-profit foundation' },
+    { id: 'smsf', label: 'SMSF', description: 'Self-managed super fund' },
+    { id: 'joint', label: 'Joint', description: 'Shared investment account between two or more parties' },
   ];
+
+  const handleEntitySelect = (entityId: string) => {
+    setSelectedEntity(entityId);
+    // Save to localStorage whenever selection changes
+    localStorage.setItem('step1Data', JSON.stringify(entityId));
+  };
 
   const handleNext = () => {
     if (selectedEntity) {
-      // Store selection and navigate to next step
-      localStorage.setItem('entityType', selectedEntity);
       router.push('/application/step-2');
     }
   };
@@ -43,7 +57,7 @@ export default function Step1Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={6} currentStep={1} completedSteps={[]} />
+        <ProgressIndicator totalSteps={7} currentStep={1} completedSteps={[]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
@@ -56,7 +70,7 @@ export default function Step1Page() {
             </p>
           </div>
 
-          <div className="mb-8">
+          <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-6">
               Select the entity type for the application <span className="text-red-500">*</span>
             </h3>
@@ -70,7 +84,7 @@ export default function Step1Page() {
                       ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                       : 'border-gray-200'
                   }`}
-                  onClick={() => setSelectedEntity(entity.id)}
+                  onClick={() => handleEntitySelect(entity.id)}
                 >
                   <div className="flex-shrink-0 mr-4">
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600">
@@ -97,8 +111,7 @@ export default function Step1Page() {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-8">
             <button
               onClick={handleNext}
               disabled={!selectedEntity}

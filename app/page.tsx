@@ -28,7 +28,7 @@ export default function HomePage() {
             Client Application Form
           </h2>
           <p className="text-lg text-gray-600 mb-6">
-            Onboard new clients for investment portfolio administration and reporting service.
+            Onboard new clients for investment portfolio administration and reporting services.
           </p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -44,7 +44,7 @@ export default function HomePage() {
                 </h3>
                 <div className="mt-2 text-sm text-blue-700">
                   <p>
-                    Your data is protected with bank-level security. This application uses end-to-end encryption and identity verification to ensure your information remains safe.
+                    Your data is protected with bank-level security. This application uses end-to-end encryption to ensure your information remains safe.
                   </p>
                 </div>
               </div>

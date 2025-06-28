@@ -8,21 +8,52 @@ import { ProgressIndicator } from '@/components/ui/progress-indicator';
 export default function Step3Page() {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
-    contactEmail: '',
-    contactPhone: '',
-    preferredContactMethod: ''
+    firstName: '',
+    lastName: '',
+    role: '',
+    email: '',
+    phone: '',
+    preferredContact: null as string | null,
+    hasSecondaryContact: null as boolean | null,
+    secondaryFirstName: '',
+    secondaryLastName: '',
+    secondaryRole: '',
+    secondaryEmail: '',
+    secondaryPhone: '',
+    secondaryPreferredContact: null as string | null
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
+  // Load saved data when component mounts
+  React.useEffect(() => {
+    const savedData = localStorage.getItem('step3Data');
+    if (savedData) {
+      setFormData(JSON.parse(savedData));
+    }
+  }, []);
+
+  const handleInputChange = (field: string, value: string | boolean | null) => {
+    const updatedData = {
+      ...formData,
       [field]: value
-    }));
+    };
+    setFormData(updatedData);
+    // Save to localStorage whenever data changes
+    localStorage.setItem('step3Data', JSON.stringify(updatedData));
   };
 
   const handleNext = () => {
-    if (formData.contactEmail && formData.contactPhone && formData.preferredContactMethod) {
-      localStorage.setItem('step3Data', JSON.stringify(formData));
+    if (formData.hasSecondaryContact === true) {
+      // 如果选择添加次要联系人，验证所有次要联系人字段
+      if (formData.secondaryFirstName &&
+          formData.secondaryLastName &&
+          formData.secondaryRole &&
+          formData.secondaryEmail &&
+          formData.secondaryPhone &&
+          formData.secondaryPreferredContact) {
+        router.push('/application/step-4');
+      }
+    } else {
+      // 如果不添加次要联系人，直接进入下一步
       router.push('/application/step-4');
     }
   };
@@ -31,17 +62,33 @@ export default function Step3Page() {
     router.push('/application/step-2');
   };
 
-  const isFormValid = formData.contactEmail && formData.contactPhone && formData.preferredContactMethod;
-
   const contactMethods = [
-    { id: 'email', label: 'Email', description: 'Preferred for document delivery' },
-    { id: 'phone', label: 'Phone', description: 'For urgent communications' },
-    { id: 'both', label: 'Both', description: 'Email and phone as needed' }
+    'Email',
+    'Phone',
+    'Both'
   ];
+
+  const roles = [
+    'Individual',
+    'Individual Trustee',
+    'Director of Corporate Trustee',
+    'Company Director',
+    'Company Secretary',
+    'Other'
+  ];
+
+  const isFormValid = formData.hasSecondaryContact === true ? (
+    formData.secondaryFirstName &&
+    formData.secondaryLastName &&
+    formData.secondaryRole &&
+    formData.secondaryEmail &&
+    formData.secondaryPhone &&
+    formData.secondaryPreferredContact
+  ) : true;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 page-transition">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
@@ -57,114 +104,324 @@ export default function Step3Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={6} currentStep={3} completedSteps={[1, 2]} />
+        <ProgressIndicator totalSteps={7} currentStep={3} completedSteps={[1, 2]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-portfolio-green-600 mb-2">
-              New Client Application Form
+              Contact Details
             </h2>
             <p className="text-gray-600">
-              Onboard new clients for investment portfolio administration and reporting service.
+              Please provide details for the main contact person for this account.
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Contact Email */}
+            {/* Main Contact Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* First Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  placeholder="Enter first name"
+                />
+              </div>
+
+              {/* Last Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+
+            {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Email Address <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-sm">@</span>
+                <select
+                  value={formData.role}
+                  onChange={(e) => handleInputChange('role', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 appearance-none h-[50px] bg-white pr-10 transition-colors"
+                >
+                  <option value="">Select role</option>
+                  <option value="Individual">Individual</option>
+                  <option value="Individual Trustee">Individual Trustee</option>
+                  <option value="Director of Corporate Trustee">Director of Corporate Trustee</option>
+                  <option value="Company Director">Company Director</option>
+                  <option value="Company Secretary">Company Secretary</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="email"
-                  placeholder="your.email@example.com"
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-portfolio-green-500 focus:border-transparent"
-                  value={formData.contactEmail}
-                  onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  placeholder="Enter email address"
                 />
               </div>
-            </div>
 
-            {/* Contact Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone Number <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-3 text-gray-400 text-sm">📞</span>
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="tel"
-                  placeholder="+61 4XX XXX XXX"
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-portfolio-green-500 focus:border-transparent"
-                  value={formData.contactPhone}
-                  onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  placeholder="Enter phone number"
                 />
               </div>
             </div>
 
-            {/* Preferred Contact Method */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
-                Preferred Contact Method <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-3">
-                {contactMethods.map((method, index) => (
-                  <div
-                    key={method.id}
-                    className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.preferredContactMethod === method.id 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('preferredContactMethod', method.id)}
-                  >
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-semibold text-gray-600">
-                        {String.fromCharCode(65 + index)}
+            {/* Contact Preference and Authorised Signatory */}
+            <div className="space-y-6">
+              {/* Preferred Contact Method */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Preferred Contact Method <span className="text-red-500">*</span>
+                </label>
+                <div className="flex space-x-4">
+                  {['Phone', 'Email', 'Both'].map((method) => (
+                    <div
+                      key={method}
+                      className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
+                        formData.preferredContact === method.toLowerCase()
+                          ? 'border-portfolio-green-500 bg-portfolio-green-50'
+                          : 'border-gray-200'
+                      }`}
+                      onClick={() => handleInputChange('preferredContact', method.toLowerCase())}
+                    >
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">{method}</div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{method.label}</div>
-                      <div className="text-sm text-gray-500">{method.description}</div>
-                    </div>
-                    <div className="flex-shrink-0">
                       <div className={`w-4 h-4 rounded-full border-2 ${
-                        formData.preferredContactMethod === method.id 
-                          ? 'border-portfolio-green-500 bg-portfolio-green-500' 
+                        formData.preferredContact === method.toLowerCase()
+                          ? 'border-portfolio-green-500 bg-portfolio-green-500'
                           : 'border-gray-300'
                       }`}>
-                        {formData.preferredContactMethod === method.id && (
+                        {formData.preferredContact === method.toLowerCase() && (
                           <div className="w-full h-full rounded-full bg-white scale-50"></div>
                         )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Privacy Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">
-                    Privacy Protection
-                  </h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>
-                      Your contact information will be used only for portfolio administration and client communications. We do not share your details with third parties without your consent.
-                    </p>
+              {/* Secondary Contact Question */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-4">
+                  Do you want to add a secondary contact person? <span className="text-red-500">*</span>
+                </label>
+                <div className="flex space-x-4">
+                  <div
+                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
+                      formData.hasSecondaryContact === true
+                        ? 'border-portfolio-green-500 bg-portfolio-green-50'
+                        : 'border-gray-200'
+                    }`}
+                    onClick={() => handleInputChange('hasSecondaryContact', true)}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">Yes</div>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.hasSecondaryContact === true
+                        ? 'border-portfolio-green-500 bg-portfolio-green-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {formData.hasSecondaryContact === true && (
+                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
+                      formData.hasSecondaryContact === false
+                        ? 'border-portfolio-green-500 bg-portfolio-green-50'
+                        : 'border-gray-200'
+                    }`}
+                    onClick={() => handleInputChange('hasSecondaryContact', false)}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">No</div>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.hasSecondaryContact === false
+                        ? 'border-portfolio-green-500 bg-portfolio-green-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {formData.hasSecondaryContact === false && (
+                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Secondary Contact Details */}
+              {formData.hasSecondaryContact && (
+                <div className="mt-6 space-y-6 border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900">Secondary Contact Details</h3>
+                  
+                  {/* Secondary Contact Basic Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* First Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.secondaryFirstName}
+                        onChange={(e) => handleInputChange('secondaryFirstName', e.target.value)}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                        placeholder="Enter first name"
+                      />
+                    </div>
+
+                    {/* Last Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.secondaryLastName}
+                        onChange={(e) => handleInputChange('secondaryLastName', e.target.value)}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                        placeholder="Enter last name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Role <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={formData.secondaryRole}
+                        onChange={(e) => handleInputChange('secondaryRole', e.target.value)}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 appearance-none h-[50px] bg-white pr-10 transition-colors"
+                      >
+                        <option value="">Select role</option>
+                        <option value="Individual">Individual</option>
+                        <option value="Individual Trustee">Individual Trustee</option>
+                        <option value="Director of Corporate Trustee">Director of Corporate Trustee</option>
+                        <option value="Company Director">Company Director</option>
+                        <option value="Company Secretary">Company Secretary</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.secondaryEmail}
+                        onChange={(e) => handleInputChange('secondaryEmail', e.target.value)}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.secondaryPhone}
+                        onChange={(e) => handleInputChange('secondaryPhone', e.target.value)}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preferred Contact Method */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-4">
+                      Preferred Contact Method <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex space-x-4">
+                      {['Phone', 'Email', 'Both'].map((method) => (
+                        <div
+                          key={method}
+                          className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
+                            formData.secondaryPreferredContact === method.toLowerCase()
+                              ? 'border-portfolio-green-500 bg-portfolio-green-50'
+                              : 'border-gray-200'
+                          }`}
+                          onClick={() => handleInputChange('secondaryPreferredContact', method.toLowerCase())}
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{method}</div>
+                          </div>
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            formData.secondaryPreferredContact === method.toLowerCase()
+                              ? 'border-portfolio-green-500 bg-portfolio-green-500'
+                              : 'border-gray-300'
+                          }`}>
+                            {formData.secondaryPreferredContact === method.toLowerCase() && (
+                              <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -178,9 +435,9 @@ export default function Step3Page() {
             </button>
             <button
               onClick={handleNext}
-              disabled={!isFormValid}
+              disabled={formData.hasSecondaryContact === true && !isFormValid}
               className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                isFormValid
+                (!formData.hasSecondaryContact || isFormValid)
                   ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
