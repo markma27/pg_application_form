@@ -225,20 +225,20 @@ export default function Step7Page() {
         <div className="flex justify-between mt-8">
           <button
             onClick={handlePrevious}
-            className="px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
           >
             Previous
           </button>
           <button
-            onClick={handleSubmit}
-            disabled={!isFormValid}
-            className={`px-6 py-3 rounded-lg transition-colors ${
-              isFormValid
-                ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700'
+            onClick={() => router.push('/application/review')}
+            disabled={!formData.hasReadTerms || !formData.hasConfirmedInformation}
+            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+              formData.hasReadTerms && formData.hasConfirmedInformation
+                ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            Submit Application
+            Review Application
           </button>
         </div>
       </div>

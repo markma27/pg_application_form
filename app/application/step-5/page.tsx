@@ -9,9 +9,9 @@ export default function Step5Page() {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
     // Investment Administration Details
-    annualReport: '',
-    meetingProxy: '',
-    investmentOffers: '',
+    annualReport: '' as string,
+    meetingProxy: '' as string,
+    investmentOffers: '' as string,
     // Dividend Reinvestment Plan
     dividendPreference: '',
   });
@@ -24,10 +24,10 @@ export default function Step5Page() {
     }
   }, []);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | null) => {
     const updatedData = {
       ...formData,
-      [field]: value
+      [field]: value || '', // Convert null to empty string
     };
     setFormData(updatedData);
     // Save to localStorage whenever data changes
@@ -95,10 +95,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.annualReport === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('annualReport', 'MainContact')}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'MainContact' ? null : 'MainContact')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Main Contact</div>
+                    <div className={`font-medium ${formData.annualReport === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.annualReport === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -113,10 +113,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.annualReport === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('annualReport', 'Adviser')}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'Adviser' ? null : 'Adviser')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Adviser</div>
+                    <div className={`font-medium ${formData.annualReport === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.annualReport === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -131,10 +131,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.annualReport === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('annualReport', 'Both')}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'Both' ? null : 'Both')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Both</div>
+                    <div className={`font-medium ${formData.annualReport === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.annualReport === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -149,10 +149,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.annualReport === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('annualReport', 'NotRequired')}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'NotRequired' ? null : 'NotRequired')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Not Required</div>
+                    <div className={`font-medium ${formData.annualReport === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.annualReport === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -175,10 +175,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.meetingProxy === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('meetingProxy', 'MainContact')}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'MainContact' ? null : 'MainContact')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Main Contact</div>
+                    <div className={`font-medium ${formData.meetingProxy === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.meetingProxy === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -193,10 +193,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.meetingProxy === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('meetingProxy', 'Adviser')}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'Adviser' ? null : 'Adviser')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Adviser</div>
+                    <div className={`font-medium ${formData.meetingProxy === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.meetingProxy === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -211,10 +211,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.meetingProxy === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('meetingProxy', 'Both')}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'Both' ? null : 'Both')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Both</div>
+                    <div className={`font-medium ${formData.meetingProxy === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.meetingProxy === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -229,10 +229,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.meetingProxy === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('meetingProxy', 'NotRequired')}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'NotRequired' ? null : 'NotRequired')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Not Required</div>
+                    <div className={`font-medium ${formData.meetingProxy === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.meetingProxy === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -255,10 +255,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.investmentOffers === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('investmentOffers', 'MainContact')}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'MainContact' ? null : 'MainContact')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Main Contact</div>
+                    <div className={`font-medium ${formData.investmentOffers === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.investmentOffers === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -273,10 +273,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.investmentOffers === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('investmentOffers', 'Adviser')}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'Adviser' ? null : 'Adviser')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Adviser</div>
+                    <div className={`font-medium ${formData.investmentOffers === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.investmentOffers === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -291,10 +291,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.investmentOffers === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('investmentOffers', 'Both')}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'Both' ? null : 'Both')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Both</div>
+                    <div className={`font-medium ${formData.investmentOffers === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.investmentOffers === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
@@ -309,10 +309,10 @@ export default function Step5Page() {
                   className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
                     formData.investmentOffers === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('investmentOffers', 'NotRequired')}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'NotRequired' ? null : 'NotRequired')}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Not Required</div>
+                    <div className={`font-medium ${formData.investmentOffers === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.investmentOffers === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'

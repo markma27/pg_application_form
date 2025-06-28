@@ -160,10 +160,10 @@ export default function Step2Page() {
                       ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                       : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('isRegisteredForGST', true)}
+                  onClick={() => handleInputChange('isRegisteredForGST', formData.isRegisteredForGST === true ? null : true)}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">Yes</div>
+                    <div className={`font-medium ${formData.isRegisteredForGST === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.isRegisteredForGST === true 
@@ -182,10 +182,10 @@ export default function Step2Page() {
                       ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                       : 'border-gray-200'
                   }`}
-                  onClick={() => handleInputChange('isRegisteredForGST', false)}
+                  onClick={() => handleInputChange('isRegisteredForGST', formData.isRegisteredForGST === false ? null : false)}
                 >
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900">No</div>
+                    <div className={`font-medium ${formData.isRegisteredForGST === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     formData.isRegisteredForGST === false 

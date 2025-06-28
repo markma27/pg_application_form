@@ -166,10 +166,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('isPrimaryContact', true)}
+                    onClick={() => handleInputChange('isPrimaryContact', formData.isPrimaryContact === true ? null : true)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Yes</div>
+                      <div className={`font-medium ${formData.isPrimaryContact === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.isPrimaryContact === true 
@@ -188,10 +188,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('isPrimaryContact', false)}
+                    onClick={() => handleInputChange('isPrimaryContact', formData.isPrimaryContact === false ? null : false)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">No</div>
+                      <div className={`font-medium ${formData.isPrimaryContact === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.isPrimaryContact === false 
@@ -218,10 +218,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('canAccessStatements', true)}
+                    onClick={() => handleInputChange('canAccessStatements', formData.canAccessStatements === true ? null : true)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Yes</div>
+                      <div className={`font-medium ${formData.canAccessStatements === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.canAccessStatements === true 
@@ -240,10 +240,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('canAccessStatements', false)}
+                    onClick={() => handleInputChange('canAccessStatements', formData.canAccessStatements === false ? null : false)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">No</div>
+                      <div className={`font-medium ${formData.canAccessStatements === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.canAccessStatements === false 
@@ -270,10 +270,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('canDealDirect', true)}
+                    onClick={() => handleInputChange('canDealDirect', formData.canDealDirect === true ? null : true)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">Yes</div>
+                      <div className={`font-medium ${formData.canDealDirect === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.canDealDirect === true 
@@ -292,10 +292,10 @@ export default function Step4Page() {
                         ? 'border-portfolio-green-500 bg-portfolio-green-50' 
                         : 'border-gray-200'
                     }`}
-                    onClick={() => handleInputChange('canDealDirect', false)}
+                    onClick={() => handleInputChange('canDealDirect', formData.canDealDirect === false ? null : false)}
                   >
                     <div className="flex-1">
-                      <div className="font-medium text-gray-900">No</div>
+                      <div className={`font-medium ${formData.canDealDirect === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 ${
                       formData.canDealDirect === false 
