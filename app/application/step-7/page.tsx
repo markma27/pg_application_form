@@ -4,15 +4,18 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function Step7Page() {
   const router = useRouter();
+  const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
+    // Identity Verification
     hasReadTerms: false,
     hasAcceptedPrivacy: false,
     hasConfirmedInformation: false,
     signature: '',
-    signatureDate: new Date().toISOString().split('T')[0]
+    signatureDate: '',
   });
 
   // Load saved data when component mounts
@@ -20,6 +23,13 @@ export default function Step7Page() {
     const savedData = localStorage.getItem('step7Data');
     if (savedData) {
       setFormData(JSON.parse(savedData));
+    } else {
+      // Set current date if no saved data
+      const today = new Date().toISOString().split('T')[0];
+      setFormData(prev => ({
+        ...prev,
+        signatureDate: today
+      }));
     }
   }, []);
 
@@ -32,58 +42,60 @@ export default function Step7Page() {
     localStorage.setItem('step7Data', JSON.stringify(updatedData));
   };
 
-  const handleSubmit = async () => {
-    if (isFormValid) {
-      // Collect all form data from localStorage
-      const allFormData = {
-        step1: JSON.parse(localStorage.getItem('step1Data') || '{}'),
-        step2: JSON.parse(localStorage.getItem('step2Data') || '{}'),
-        step3: JSON.parse(localStorage.getItem('step3Data') || '{}'),
-        step4: JSON.parse(localStorage.getItem('step4Data') || '{}'),
-        step5: JSON.parse(localStorage.getItem('step5Data') || '{}'),
-        step6: JSON.parse(localStorage.getItem('step6Data') || '{}'),
-        step7: formData
-      };
+  const isFormValid = () => {
+    // All required fields must be filled
+    return formData.hasReadTerms && 
+           formData.hasAcceptedPrivacy && 
+           formData.hasConfirmedInformation &&
+           formData.signature !== '' &&
+           formData.signatureDate !== '';
+  };
 
-      try {
-        const response = await fetch('/api/applications', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(allFormData),
-        });
-
-        if (response.ok) {
-          // Clear all form data from localStorage
-          localStorage.removeItem('step1Data');
-          localStorage.removeItem('step2Data');
-          localStorage.removeItem('step3Data');
-          localStorage.removeItem('step4Data');
-          localStorage.removeItem('step5Data');
-          localStorage.removeItem('step6Data');
-          localStorage.removeItem('step7Data');
-
-          // Redirect to thank you page
-          router.push('/thank-you');
-        } else {
-          throw new Error('Failed to submit application');
-        }
-      } catch (error) {
-        console.error('Error submitting application:', error);
-        // Handle error (show error message to user)
-      }
+  const handleNext = () => {
+    if (!isFormValid()) {
+      return;
     }
+
+    // Save form data to localStorage
+    localStorage.setItem('step7Data', JSON.stringify(formData));
+    router.push('/application/review');
   };
 
   const handlePrevious = () => {
     router.push('/application/step-6');
   };
 
-  const isFormValid = formData.hasReadTerms && 
-                     formData.hasAcceptedPrivacy && 
-                     formData.hasConfirmedInformation &&
-                     formData.signature;
+  const handleRestartClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  const handleRestartConfirm = () => {
+    // Clear all localStorage data
+    localStorage.removeItem('step1Data');
+    localStorage.removeItem('step2Data');
+    localStorage.removeItem('step3Data');
+    localStorage.removeItem('step4Data');
+    localStorage.removeItem('step5Data');
+    localStorage.removeItem('step6Data');
+    localStorage.removeItem('step7Data');
+    
+    // Reset current form state
+    setFormData({
+      hasReadTerms: false,
+      hasAcceptedPrivacy: false,
+      hasConfirmedInformation: false,
+      signature: '',
+      signatureDate: ''
+    });
+    
+    // Close dialog and redirect to home page
+    setIsConfirmationOpen(false);
+    router.push('/');
+  };
+
+  const handleRestartCancel = () => {
+    setIsConfirmationOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -208,39 +220,55 @@ export default function Step7Page() {
             {/* Signature Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date
+                Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={formData.signatureDate}
                 onChange={(e) => handleInputChange('signatureDate', e.target.value)}
                 className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                readOnly
               />
             </div>
           </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={handlePrevious}
+              className="w-32 px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center justify-center"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={handleRestartClick}
+              className="w-32 px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center justify-center"
+            >
+              Restart
+            </button>
+
+            <button
+              onClick={handleNext}
+              disabled={!isFormValid()}
+              className={`w-32 px-6 py-2 rounded-md font-medium transition-colors flex items-center justify-center ${
+                isFormValid()
+                  ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Review
+            </button>
+          </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={handlePrevious}
-            className="px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => router.push('/application/review')}
-            disabled={!formData.hasReadTerms || !formData.hasConfirmedInformation}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
-              formData.hasReadTerms && formData.hasConfirmedInformation
-                ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            Review Application
-          </button>
-        </div>
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isConfirmationOpen}
+          title="Restart Application"
+          message="Are you sure you want to restart the application? This will erase all completed information."
+          onConfirm={handleRestartConfirm}
+          onCancel={handleRestartCancel}
+        />
       </div>
     </div>
   );

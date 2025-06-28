@@ -4,9 +4,11 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function Step2Page() {
   const router = useRouter();
+  const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
     entityName: '',
     taxFileNumber: '',
@@ -37,16 +39,43 @@ export default function Step2Page() {
     localStorage.setItem('step2Data', JSON.stringify(updatedData));
   };
 
-  const handleNext = () => {
-    if (formData.entityName && 
-        formData.taxFileNumber && 
-        formData.isRegisteredForGST !== null && 
-        formData.streetAddress &&
-        formData.city &&
-        formData.state &&
-        formData.postCode) {
-      router.push('/application/step-3');
+  const isFormValid = () => {
+    // All required fields must be filled
+    if (!formData.entityName || !formData.taxFileNumber || 
+        formData.isRegisteredForGST === null || !formData.streetAddress || 
+        !formData.city || !formData.state || !formData.postCode) {
+      return false;
     }
+
+    // ABN validation (11 digits) - only if ABN is provided
+    const abnRegex = /^\d{11}$/;
+    if (formData.australianBusinessNumber && !abnRegex.test(formData.australianBusinessNumber)) {
+      return false;
+    }
+
+    // TFN validation (8 or 9 digits)
+    const tfnRegex = /^\d{8,9}$/;
+    if (!tfnRegex.test(formData.taxFileNumber.replace(/\s/g, ''))) {
+      return false;
+    }
+
+    // Postcode validation (4 digits)
+    const postcodeRegex = /^\d{4}$/;
+    if (!postcodeRegex.test(formData.postCode)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!isFormValid()) {
+      return;
+    }
+
+    // Save form data to localStorage
+    localStorage.setItem('step2Data', JSON.stringify(formData));
+    router.push('/application/step-3');
   };
 
   const handlePrevious = () => {
@@ -54,13 +83,41 @@ export default function Step2Page() {
     router.push('/application/step-1');
   };
 
-  const isFormValid = formData.entityName && 
-                     formData.taxFileNumber && 
-                     formData.isRegisteredForGST !== null && 
-                     formData.streetAddress &&
-                     formData.city &&
-                     formData.state &&
-                     formData.postCode;
+  const handleRestartClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  const handleRestartConfirm = () => {
+    // Clear all localStorage data
+    localStorage.removeItem('step1Data');
+    localStorage.removeItem('step2Data');
+    localStorage.removeItem('step3Data');
+    localStorage.removeItem('step4Data');
+    localStorage.removeItem('step5Data');
+    localStorage.removeItem('step6Data');
+    localStorage.removeItem('step7Data');
+    
+    // Reset current form state
+    setFormData({
+      entityName: '',
+      taxFileNumber: '',
+      australianBusinessNumber: '',
+      isRegisteredForGST: null,
+      holderIdentificationNumber: '',
+      streetAddress: '',
+      city: '',
+      state: '',
+      postCode: ''
+    });
+    
+    // Close dialog and redirect to home page
+    setIsConfirmationOpen(false);
+    router.push('/');
+  };
+
+  const handleRestartCancel = () => {
+    setIsConfirmationOpen(false);
+  };
 
   const states = [
     'ACT',
@@ -282,19 +339,27 @@ export default function Step2Page() {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-8">
             <button
               onClick={handlePrevious}
-              className="px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+              className="w-32 px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center justify-center"
             >
               Previous
             </button>
+            
+            <button
+              onClick={handleRestartClick}
+              className="w-32 px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center justify-center"
+            >
+              Restart
+            </button>
+
             <button
               onClick={handleNext}
-              disabled={!isFormValid}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                isFormValid
+              disabled={!isFormValid()}
+              className={`w-32 px-6 py-2 rounded-md font-medium transition-colors flex items-center justify-center ${
+                isFormValid()
                   ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -302,6 +367,15 @@ export default function Step2Page() {
               Next
             </button>
           </div>
+
+          {/* Confirmation Dialog */}
+          <ConfirmationDialog
+            isOpen={isConfirmationOpen}
+            title="Restart Application"
+            message="Are you sure you want to restart the application? This will erase all completed information."
+            onConfirm={handleRestartConfirm}
+            onCancel={handleRestartCancel}
+          />
         </div>
       </div>
     </div>

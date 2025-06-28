@@ -4,9 +4,11 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function Step4Page() {
   const router = useRouter();
+  const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
     adviserName: '',
     companyName: '',
@@ -36,12 +38,85 @@ export default function Step4Page() {
     localStorage.setItem('step4Data', JSON.stringify(updatedData));
   };
 
+  const isFormValid = () => {
+    // If no adviser information is provided, the form is valid
+    if (!formData.adviserName && !formData.companyName && !formData.address && 
+        !formData.telephone && !formData.email && formData.isPrimaryContact === null &&
+        formData.canAccessStatements === null && formData.canDealDirect === null) {
+      return true;
+    }
+
+    // If any adviser information is provided, validate all fields
+    if (formData.adviserName || formData.companyName || formData.address || 
+        formData.telephone || formData.email || formData.isPrimaryContact !== null ||
+        formData.canAccessStatements !== null || formData.canDealDirect !== null) {
+      
+      // All fields must be filled if any field is filled
+      if (!formData.adviserName || !formData.companyName || !formData.address || 
+          !formData.telephone || !formData.email || formData.isPrimaryContact === null ||
+          formData.canAccessStatements === null || formData.canDealDirect === null) {
+        return false;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        return false;
+      }
+
+      // Phone validation (Australian format)
+      const phoneRegex = /^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
+      if (!phoneRegex.test(formData.telephone)) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleNext = () => {
+    // Save form data to localStorage (even if empty)
+    localStorage.setItem('step4Data', JSON.stringify(formData));
     router.push('/application/step-5');
   };
 
   const handlePrevious = () => {
     router.push('/application/step-3');
+  };
+
+  const handleRestartClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  const handleRestartConfirm = () => {
+    // Clear all localStorage data
+    localStorage.removeItem('step1Data');
+    localStorage.removeItem('step2Data');
+    localStorage.removeItem('step3Data');
+    localStorage.removeItem('step4Data');
+    localStorage.removeItem('step5Data');
+    localStorage.removeItem('step6Data');
+    localStorage.removeItem('step7Data');
+    
+    // Reset current form state
+    setFormData({
+      adviserName: '',
+      companyName: '',
+      address: '',
+      telephone: '',
+      email: '',
+      isPrimaryContact: null,
+      canAccessStatements: null,
+      canDealDirect: null
+    });
+    
+    // Close dialog and redirect to home page
+    setIsConfirmationOpen(false);
+    router.push('/');
+  };
+
+  const handleRestartCancel = () => {
+    setIsConfirmationOpen(false);
   };
 
   return (
@@ -312,21 +387,38 @@ export default function Step4Page() {
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8">
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-8">
             <button
               onClick={handlePrevious}
-              className="px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+              className="w-32 px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center justify-center"
             >
               Previous
             </button>
+
+            <button
+              onClick={handleRestartClick}
+              className="w-32 px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center justify-center"
+            >
+              Restart
+            </button>
+
             <button
               onClick={handleNext}
-              className="px-6 py-2 rounded-md font-medium transition-colors bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500"
+              className="w-32 px-6 py-2 rounded-md font-medium transition-colors bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500 flex items-center justify-center"
             >
               Next
             </button>
           </div>
+
+          {/* Confirmation Dialog */}
+          <ConfirmationDialog
+            isOpen={isConfirmationOpen}
+            title="Restart Application"
+            message="Are you sure you want to restart the application? This will erase all completed information."
+            onConfirm={handleRestartConfirm}
+            onCancel={handleRestartCancel}
+          />
         </div>
       </div>
     </div>

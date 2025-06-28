@@ -4,9 +4,11 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 export default function ReviewPage() {
   const router = useRouter();
+  const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState<{
     step1: string | null;
     step2: {
@@ -117,6 +119,40 @@ export default function ReviewPage() {
       console.error('Error submitting application:', error);
       // Handle error appropriately
     }
+  };
+
+  const handleRestartClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  const handleRestartConfirm = () => {
+    // Clear all localStorage data
+    localStorage.removeItem('step1Data');
+    localStorage.removeItem('step2Data');
+    localStorage.removeItem('step3Data');
+    localStorage.removeItem('step4Data');
+    localStorage.removeItem('step5Data');
+    localStorage.removeItem('step6Data');
+    localStorage.removeItem('step7Data');
+    
+    // Reset current form state
+    setFormData({
+      step1: null,
+      step2: null,
+      step3: null,
+      step4: null,
+      step5: null,
+      step6: null,
+      step7: null,
+    });
+    
+    // Close dialog and redirect to home page
+    setIsConfirmationOpen(false);
+    router.push('/');
+  };
+
+  const handleRestartCancel = () => {
+    setIsConfirmationOpen(false);
   };
 
   const handleEdit = (step: number) => {
@@ -323,15 +359,42 @@ export default function ReviewPage() {
             )}
           </div>
 
-          {/* Submit Button */}
-          <div className="mt-8 flex justify-end">
+          {/* Navigation Buttons */}
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={() => router.push('/application/step-7')}
+              className="w-32 px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center justify-center"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={handleRestartClick}
+              className="w-32 px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center justify-center"
+            >
+              Restart
+            </button>
+
             <button
               onClick={handleSubmit}
-              className="bg-portfolio-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-portfolio-green-700 transition-colors"
+              className={`w-32 px-6 py-2 rounded-md font-medium transition-colors flex items-center justify-center ${
+                formData.step1 && formData.step2 && formData.step3 && formData.step4 && formData.step5 && formData.step6 && formData.step7
+                  ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
-              Submit Application
+              Submit
             </button>
           </div>
+
+          {/* Confirmation Dialog */}
+          <ConfirmationDialog
+            isOpen={isConfirmationOpen}
+            title="Restart Application"
+            message="Are you sure you want to restart the application? This will erase all completed information."
+            onConfirm={handleRestartConfirm}
+            onCancel={handleRestartCancel}
+          />
         </div>
       </div>
     </div>
