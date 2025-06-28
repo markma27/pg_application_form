@@ -103,7 +103,24 @@ export default function ReviewPage() {
 
   const handleSubmit = async () => {
     try {
-      // TODO: Submit all data to your backend
+      // Compose the payload from all steps
+      const payload = {
+        step1: formData.step1,
+        step2: formData.step2,
+        step3: formData.step3,
+        step4: formData.step4,
+        step5: formData.step5,
+        step6: formData.step6,
+        step7: formData.step7,
+      };
+      const response = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to submit application');
+      }
       // Clear all localStorage data after successful submission
       localStorage.removeItem('step1Data');
       localStorage.removeItem('step2Data');
@@ -112,12 +129,11 @@ export default function ReviewPage() {
       localStorage.removeItem('step5Data');
       localStorage.removeItem('step6Data');
       localStorage.removeItem('step7Data');
-      
       // Redirect to thank you page
       router.push('/thank-you');
     } catch (error) {
       console.error('Error submitting application:', error);
-      // Handle error appropriately
+      // Optionally show an error message to the user
     }
   };
 

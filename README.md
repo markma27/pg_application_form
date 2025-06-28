@@ -1,83 +1,88 @@
-# PortfolioGuardian 客户申请表单
+# PortfolioGuardian Client Application Form
 
-这是一个安全的多步骤客户入职应用程序，用于 PortfolioGuardian 投资组合管理和报告服务。
+This is a secure multi-step client onboarding application for PortfolioGuardian investment management and reporting services.
 
-## 🚀 功能特点
+## 🚀 Features
 
-- **多步骤表单流程**：6个步骤的用户友好界面
-- **身份验证**：集成 Stripe Identity 进行文件验证
-- **安全性**：端到端加密，银行级安全标准
-- **响应式设计**：使用 Tailwind CSS 的现代 UI
-- **类型安全**：完整的 TypeScript 支持
-- **状态管理**：使用 Zustand 进行表单状态管理
-- **GDPR 合规**：数据处理合规性功能
+- **Multi-step Form Flow**: User-friendly interface with 6 steps
+- **Identity Verification**: Integrated with Stripe Identity for document verification
+- **Security**: End-to-end encryption, bank-level security standards
+- **Responsive Design**: Modern UI using Tailwind CSS
+- **Type Safety**: Full TypeScript support
+- **State Management**: Uses Zustand for form state management
+- **GDPR Compliance**: Data processing compliance features
+- **Accounting Team Access**: Secure portal for the accounting team to view and process applications
 
-## 📋 表单步骤
+## 📋 Form Steps
 
-1. **实体类型选择** - Individual, SMSF, Company, Trust
-2. **实体详细信息** - 法定名称、ABN、GST 注册、地址
-3. **联系信息** - 电邮、电话、首选联系方式
-4. **身份验证** - Stripe Identity 文档上传和验证
-5. **投资档案** - 经验水平、风险承受能力、投资目标
-6. **附加信息** - 税务居住地、实益拥有权、资金来源
+1. **Entity Type Selection** - Individual, SMSF, Company, Trust
+2. **Entity Details** - Legal name, ABN, GST registration, address
+3. **Contact Information** - Email, phone, preferred contact method
+4. **Identity Verification** - Stripe Identity document upload and verification
+5. **Investment Profile** - Experience level, risk tolerance, investment objectives
+6. **Additional Information** - Tax residency, beneficial ownership, source of funds
 
-## 🛠 技术栈
+## 🛠 Tech Stack
 
-### 前端
-- **Next.js 14** - React 框架
-- **Shadcn UI** - 组件库
-- **Tailwind CSS** - 样式框架
-- **TypeScript** - 类型安全
-- **React Hook Form** - 表单管理
-- **Zod** - 数据验证
-- **Zustand** - 状态管理
+### Frontend
+- **Next.js 14** - React framework
+- **Shadcn UI** - Component library
+- **Tailwind CSS** - Styling framework
+- **TypeScript** - Type safety
+- **React Hook Form** - Form management
+- **Zod** - Data validation
+- **Zustand** - State management
 
-### 后端服务
-- **Supabase** - 数据库 (PostgreSQL) 和认证
-- **Stripe Identity** - 身份验证 API
-- **Supabase Storage** - 加密文件存储
-- **Supabase Edge Functions** - 无服务器函数
+### Backend Services
+- **Supabase** - Database (PostgreSQL) and authentication
+- **Stripe Identity** - Identity verification API
+- **Supabase Storage** - Encrypted file storage
+- **Supabase Edge Functions** - Serverless functions
 
-## 🔧 安装和设置
+## 🔧 Installation & Setup
 
-### 1. 安装依赖
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### 2. 环境变量配置
-创建 `.env.local` 文件并配置以下变量：
+### 2. Environment Variables
+Create a `.env.local` file and configure the following variables:
 
 ```env
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_public_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # Stripe
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
-# 应用程序
+# Application
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=http://localhost:3000
 
-# 邮件
+# Email
 RESEND_API_KEY=your_resend_api_key
 FROM_EMAIL=noreply@portfolioguardian.com
 
-# 安全
+# Security
 ENCRYPTION_KEY=your_32_character_encryption_key
 RATE_LIMIT_MAX=10
+
+# Accounting Team Access
+ACCOUNTING_JWT_SECRET=your_accounting_jwt_secret_key
+ACCOUNTING_TEAM_EMAIL=accounting@portfolioguardian.com
 ```
 
-### 3. 数据库设置
-运行 Supabase 迁移来创建必需的表：
+### 3. Database Setup
+Run Supabase migrations to create the required tables. First, run the base table structure:
 
-```bash
-# 创建申请表
+```sql
+-- Create applications table
 CREATE TABLE applications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   session_id VARCHAR UNIQUE NOT NULL,
@@ -108,7 +113,7 @@ CREATE TABLE applications (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-# 创建文档表
+-- Create documents table
 CREATE TABLE application_documents (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   application_id UUID REFERENCES applications(id),
@@ -120,93 +125,169 @@ CREATE TABLE application_documents (
   uploaded_at TIMESTAMP DEFAULT NOW()
 );
 
-# 启用行级安全
+-- Enable Row Level Security
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE application_documents ENABLE ROW LEVEL SECURITY;
 ```
 
-### 4. 启动开发服务器
+Then run the full accounting team access system migration:
+
+```bash
+# Run database-migration.sql in the Supabase SQL Editor
+```
+
+### 4. Start the Development Server
 ```bash
 npm run dev
 ```
 
-应用程序将在 [http://localhost:3000](http://localhost:3000) 上运行。
+The application will run at [http://localhost:3000](http://localhost:3000).
 
-## 🔒 安全功能
+The accounting team portal will run at [http://localhost:3000/accounting](http://localhost:3000/accounting).
 
-- **HTTPS Only** - 强制 HTTPS 连接
-- **内容安全策略 (CSP)** - 防止 XSS 攻击
-- **输入验证** - 所有用户输入的验证和清理
-- **速率限制** - API 端点的速率限制
-- **审计日志** - 所有操作的日志记录
-- **数据加密** - 敏感数据的端到端加密
-- **自动清理** - 30天自动数据清理
+## 🔒 Security Features
 
-## 📁 项目结构
+- **HTTPS Only** - Enforces HTTPS connections
+- **Content Security Policy (CSP)** - Prevents XSS attacks
+- **Input Validation** - Validates and sanitizes all user input
+- **Rate Limiting** - API endpoint rate limiting
+- **Audit Logs** - Logs all operations
+- **Data Encryption** - End-to-end encryption of sensitive data
+- **Automatic Cleanup** - 30-day automatic data cleanup
+- **Accounting Team Access Control** - JWT and API key authentication
+- **Row Level Security** - Database-level access control
+
+## 📁 Project Structure
 
 ```
 PG_Application_Form/
 ├── app/                          # Next.js App Router
-│   ├── globals.css              # 全局样式
-│   ├── layout.tsx               # 根布局
-│   ├── page.tsx                 # 首页
-│   ├── application/             # 申请表单页面
-│   │   ├── step-1/page.tsx     # 实体类型选择
-│   │   ├── step-2/page.tsx     # 实体详细信息
-│   │   ├── step-3/page.tsx     # 联系信息
-│   │   ├── step-4/page.tsx     # 身份验证
-│   │   ├── step-5/page.tsx     # 投资档案
-│   │   └── step-6/page.tsx     # 审核和提交
-│   ├── api/                     # API 路由
-│   │   ├── stripe-identity/     # Stripe Identity 集成
-│   │   ├── applications/        # 申请 CRUD
-│   │   └── documents/           # 文档上传
-│   └── thank-you/page.tsx       # 成功页面
-├── components/                   # React 组件
-│   └── ui/                      # Shadcn UI 组件
+│   ├── globals.css              # Global styles
+│   ├── layout.tsx               # Root layout
+│   ├── page.tsx                 # Home page
+│   ├── application/             # Application form pages
+│   │   ├── step-1/page.tsx     # Entity type selection
+│   │   ├── step-2/page.tsx     # Entity details
+│   │   ├── step-3/page.tsx     # Contact information
+│   │   ├── step-4/page.tsx     # Identity verification
+│   │   ├── step-5/page.tsx     # Investment profile
+│   │   └── step-6/page.tsx     # Review and submit
+│   ├── accounting/              # Accounting team portal
+│   │   ├── page.tsx            # Application list
+│   │   ├── login/page.tsx      # Login page
+│   │   └── applications/       # Application detail pages
+│   ├── api/                     # API routes
+│   │   ├── stripe-identity/     # Stripe Identity integration
+│   │   ├── applications/        # Application CRUD
+│   │   ├── documents/           # Document upload
+│   │   └── accounting/          # Accounting team API
+│   └── thank-you/page.tsx       # Success page
+├── components/                   # React components
+│   └── ui/                      # Shadcn UI components
 │       ├── button.tsx
 │       ├── input.tsx
 │       ├── label.tsx
 │       ├── textarea.tsx
 │       └── progress-indicator.tsx
-├── lib/                         # 实用程序和配置
-│   ├── utils.ts                 # 通用实用程序函数
-│   └── store.ts                 # Zustand 状态管理
-└── public/                      # 静态资源
+├── lib/                         # Utilities and config
+│   ├── utils.ts                 # General utility functions
+│   ├── store.ts                 # Zustand state management
+│   ├── auth.ts                  # Accounting team authentication
+│   ├── encryption.ts            # Data encryption
+│   └── notifications.ts         # Notification system
+└── public/                      # Static assets
 ```
 
-## 🚦 使用流程
+## 🚦 Usage Flow
 
-1. **访问首页** - 用户看到欢迎页面和安全通知
-2. **开始申请** - 点击"开始申请"按钮
-3. **完成各步骤** - 逐步填写6个表单页面
-4. **身份验证** - 通过 Stripe Identity 上传文档
-5. **审核提交** - 最终审核并提交申请
-6. **确认页面** - 收到确认和后续步骤信息
+### Client Application Flow
+1. **Visit Home Page** - User sees welcome page and security notice
+2. **Start Application** - Click "Start Application" button
+3. **Complete Each Step** - Fill out the 6 form pages step by step
+4. **Identity Verification** - Upload documents via Stripe Identity
+5. **Review and Submit** - Final review and submit application
+6. **Confirmation Page** - Receive confirmation and next steps
 
-## 🔧 开发
+### Accounting Team Access Flow
+1. **Login to Portal** - Visit `/accounting/login` for authentication
+2. **View Application List** - See all submitted applications
+3. **View Application Details** - Click to view full details (including decrypted sensitive data)
+4. **Add Notes** - Add internal notes to applications
+5. **Update Status** - Mark applications as reviewed or set priority
 
-### 添加新组件
+## 🔐 Accounting Team Security
+
+### Authentication Methods
+- **JWT Token** - Time-based access token
+- **API Key** - For programmatic access
+- **Password Hashing** - Secure password storage
+
+### Data Protection
+- **Sensitive Data Encryption** - ABN, phone numbers, bank account info, etc.
+- **Access Logs** - Record all data access
+- **Audit Trail** - Complete operation history
+
+### Default Account
+After system setup, you can use the following default account to log in to the accounting team portal:
+- **Email**: admin@portfolioguardian.com
+- **Password**: admin123
+
+**Important**: Please change the default password immediately in production!
+
+## 🔧 Development
+
+### Add New Components
 ```bash
-# 使用 Shadcn UI CLI 添加组件
+# Use Shadcn UI CLI to add components
 npx shadcn-ui@latest add [component-name]
 ```
 
-### 类型检查
+### Type Checking
 ```bash
 npm run type-check
 ```
 
-### 构建生产版本
+### Build for Production
 ```bash
 npm run build
-npm start
 ```
 
-## 📞 支持
+### Database Migration
+```bash
+# Run SQL migration in Supabase console
+# Or use Supabase CLI
+supabase db push
+```
 
-如需技术支持或有任何问题，请联系 PortfolioGuardian 技术团队。
+## 📞 Support
+
+If you have any questions or need help, please contact the development team.
 
 ---
 
-**注意**: 这是一个安全敏感的应用程序。在生产环境中部署之前，请确保所有安全配置正确设置，并进行充分的安全测试。 
+**Note**: This is a production-ready application with full security and compliance features. Before deploying to production, please ensure:
+1. All default passwords are changed
+2. Environment variables are correctly configured
+3. Proper domain and SSL certificates are set up
+4. Email service is configured
+5. Monitoring and logging are enabled 
+
+export function encryptApplicationData(data: any) {
+  const sensitiveFields = [
+    'australian_business_number',
+    'holder_identification_number',
+    'contact_phone',
+    'account_number', // Only if this is a string field
+    'bsb' // Only if this is a string field
+  ];
+
+  const encryptedData = { ...data };
+
+  for (const field of sensitiveFields) {
+    if (typeof data[field] === 'string' && data[field]) {
+      encryptedData[field] = encryptData(data[field]);
+    }
+  }
+
+  return encryptedData;
+} 

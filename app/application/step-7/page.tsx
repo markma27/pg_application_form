@@ -47,8 +47,8 @@ export default function Step7Page() {
     return formData.hasReadTerms && 
            formData.hasAcceptedPrivacy && 
            formData.hasConfirmedInformation &&
-           formData.signature !== '' &&
-           formData.signatureDate !== '';
+           formData.signature?.trim() !== '' &&
+           formData.signatureDate?.trim() !== '';
   };
 
   const handleNext = () => {
