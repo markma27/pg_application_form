@@ -185,7 +185,7 @@ export default function ReviewPage() {
             Application Summary
           </h2>
           <p className="text-gray-600 mb-8">
-            Please review the following information carefully. Click the "Edit" button for any section you wish to modify.
+            Please review the following information carefully. Click the &quot;Edit&quot; button for any section you wish to modify.
           </p>
 
           {/* Step 1 Summary */}
