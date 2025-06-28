@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
@@ -32,17 +32,7 @@ export default function AccountingPortal() {
   const [totalApplications, setTotalApplications] = useState(0)
   const [user, setUser] = useState<any>(null)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    if (user) {
-      fetchApplications()
-    }
-  }, [user])
-
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     const token = localStorage.getItem('accounting_token')
     const userData = localStorage.getItem('accounting_user')
     
@@ -52,9 +42,9 @@ export default function AccountingPortal() {
     }
     
     setUser(JSON.parse(userData))
-  }
+  }, [router])
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       const response = await fetch('/api/accounting/applications', {
         headers: {
@@ -77,7 +67,17 @@ export default function AccountingPortal() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    if (user) {
+      fetchApplications()
+    }
+  }, [user, fetchApplications])
 
   const handleViewDetails = (id: string) => {
     router.push(`/accounting/applications/${id}`)

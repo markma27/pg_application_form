@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 
@@ -58,6 +58,10 @@ interface ApplicationData {
   bsb?: string
   submitted_at: string
   created_at: string
+  accounting_reviewed: boolean
+  accounting_reviewed_at?: string
+  accounting_status: string
+  priority: string
   application_documents?: Array<{
     id: string
     document_type: string
@@ -104,17 +108,7 @@ export default function ApplicationDetail() {
   const [newNote, setNewNote] = useState('')
   const [submittingNote, setSubmittingNote] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    if (user && applicationId) {
-      fetchApplication()
-    }
-  }, [user, applicationId])
-
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     const token = localStorage.getItem('accounting_token')
     const userData = localStorage.getItem('accounting_user')
     
@@ -124,9 +118,9 @@ export default function ApplicationDetail() {
     }
     
     setUser(JSON.parse(userData))
-  }
+  }, [router])
 
-  const fetchApplication = async () => {
+  const fetchApplication = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/accounting/applications/${applicationId}`, {
@@ -155,18 +149,29 @@ export default function ApplicationDetail() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [applicationId, router])
 
-  const handleAddNote = async () => {
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    if (user && applicationId) {
+      fetchApplication()
+    }
+  }, [user, applicationId, fetchApplication])
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!newNote.trim()) return
 
+    setSubmittingNote(true)
     try {
-      setSubmittingNote(true)
       const response = await fetch('/api/accounting/applications', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`
         },
         body: JSON.stringify({
           action: 'add_notes',
@@ -177,14 +182,42 @@ export default function ApplicationDetail() {
 
       if (response.ok) {
         setNewNote('')
-        fetchApplication() // Refresh to get the new note
+        await fetchApplication()
       } else {
-        console.error('Failed to add note')
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to add note')
       }
     } catch (error) {
       console.error('Error adding note:', error)
+      setError('An error occurred while adding the note')
     } finally {
       setSubmittingNote(false)
+    }
+  }
+
+  const handleMarkReviewed = async () => {
+    try {
+      const response = await fetch('/api/accounting/applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`
+        },
+        body: JSON.stringify({
+          action: 'mark_reviewed',
+          applicationId
+        })
+      })
+
+      if (response.ok) {
+        await fetchApplication()
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to mark as reviewed')
+      }
+    } catch (error) {
+      console.error('Error marking as reviewed:', error)
+      setError('An error occurred while marking the application as reviewed')
     }
   }
 
@@ -540,6 +573,18 @@ export default function ApplicationDetail() {
                   <label className="block text-sm font-medium text-gray-700">Created</label>
                   <p className="mt-1 text-sm text-gray-900">{formatDate(application.created_at)}</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <div className="mt-1">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      application.accounting_reviewed
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {application.accounting_reviewed ? 'Reviewed' : 'Pending Review'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -559,7 +604,7 @@ export default function ApplicationDetail() {
                     onClick={handleAddNote}
                     className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
-                    Add Note
+                    {submittingNote ? 'Adding...' : 'Add Note'}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -575,6 +620,14 @@ export default function ApplicationDetail() {
                     <p className="text-sm text-gray-500">No notes yet</p>
                   )}
                 </div>
+                {!application.accounting_reviewed && (
+                  <button
+                    onClick={handleMarkReviewed}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
+                  >
+                    Mark as Reviewed
+                  </button>
+                )}
               </div>
             </div>
           </div>
