@@ -4,6 +4,17 @@ import { encryptApplicationData } from '@/lib/encryption';
 import { notifyAccountingTeam } from '@/lib/notifications';
 import crypto from 'crypto';
 
+// Add current time to dates if they don't have it
+function addCurrentTime(dateStr: string): string {
+  if (!dateStr) return '';
+  if (dateStr.includes('T')) return dateStr; // Already has time
+  
+  const now = new Date();
+  const date = new Date(dateStr + 'T00:00:00');
+  date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+  return date.toISOString();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -77,14 +88,14 @@ export async function POST(request: NextRequest) {
       bsb: step6.bsb || '',
       signature1: step6.signature1 || '',
       signature2: step6.signature2 || '',
-      date1: step6.date1 || '',
-      date2: step6.date2 || '',
+      date1: addCurrentTime(step6.date1),
+      date2: addCurrentTime(step6.date2),
       has_acknowledged: step6.hasAcknowledged ?? null,
       has_read_terms: step7.hasReadTerms ?? null,
       has_accepted_privacy: step7.hasAcceptedPrivacy ?? null,
       has_confirmed_information: step7.hasConfirmedInformation ?? null,
       final_signature: step7.signature || '',
-      final_signature_date: step7.signatureDate || '',
+      final_signature_date: addCurrentTime(step7.signatureDate),
       privacy_policy_accepted: step7.hasAcceptedPrivacy ?? false,
       terms_of_service_accepted: step7.hasReadTerms ?? false,
       data_processing_consent: step7.hasAcceptedPrivacy ?? false,
@@ -149,6 +160,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       applicationId: applicationId,
+      reference_number: referenceNumber,
       message: 'Application submitted successfully'
     });
 

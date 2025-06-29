@@ -121,6 +121,11 @@ export default function ReviewPage() {
       if (!response.ok) {
         throw new Error('Failed to submit application');
       }
+      const data = await response.json();
+      // Save reference number to localStorage for thank you page
+      localStorage.setItem('reviewData', JSON.stringify({
+        reference_number: data.reference_number
+      }));
       // Clear all localStorage data after successful submission
       localStorage.removeItem('step1Data');
       localStorage.removeItem('step2Data');

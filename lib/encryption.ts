@@ -56,7 +56,8 @@ export function decryptField(encryptedData: EncryptedData | null): string | null
 export function encryptApplicationData(data: any) {
   const sensitiveFields = [
     'account_number',
-    'bsb'
+    'bsb',
+    'tax_file_number'
   ]
   
   const encryptedData = { ...data }
@@ -70,18 +71,60 @@ export function encryptApplicationData(data: any) {
   return encryptedData
 }
 
+// Helper function to parse encrypted data string
+function parseEncryptedDataString(str: string): EncryptedData | null {
+  try {
+    // Remove the single quotes and parse the JSON string
+    const cleanStr = str.replace(/^'|'$/g, '');
+    const parsed = JSON.parse(cleanStr);
+    
+    // Validate the structure
+    if (
+      typeof parsed === 'object' &&
+      typeof parsed.encrypted === 'string' &&
+      typeof parsed.iv === 'string' &&
+      typeof parsed.authTag === 'string'
+    ) {
+      return parsed;
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to parse encrypted data string:', error);
+    return null;
+  }
+}
+
 // Helper function to decrypt application data
 export function decryptApplicationData(data: any) {
   const sensitiveFields = [
     'account_number',
-    'bsb'
+    'bsb',
+    'tax_file_number'
   ]
   
   const decryptedData = { ...data }
   
   for (const field of sensitiveFields) {
-    if (data[field] && typeof data[field] === 'object' && data[field].encrypted) {
-      decryptedData[field] = decryptData(data[field])
+    if (!data[field]) continue;
+    
+    try {
+      let encryptedData: EncryptedData | null = null;
+      
+      // Case 1: Object format
+      if (typeof data[field] === 'object' && data[field].encrypted) {
+        encryptedData = data[field];
+      }
+      // Case 2: String format (JSON string)
+      else if (typeof data[field] === 'string' && data[field].includes('"encrypted"')) {
+        encryptedData = parseEncryptedDataString(data[field]);
+      }
+      
+      if (encryptedData) {
+        decryptedData[field] = decryptData(encryptedData);
+      }
+    } catch (error) {
+      console.error(`Failed to decrypt ${field}:`, error);
+      decryptedData[field] = `Error: Unable to decrypt ${field}`;
     }
   }
   

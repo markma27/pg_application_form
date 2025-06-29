@@ -26,16 +26,50 @@ export default function Step6Page() {
   React.useEffect(() => {
     const savedData = localStorage.getItem('step6Data');
     if (savedData) {
-      setFormData(JSON.parse(savedData));
+      const parsedData = JSON.parse(savedData);
+      
+      // Convert ISO dates back to YYYY-MM-DD format for date inputs
+      if (parsedData.date1) {
+        parsedData.date1 = new Date(parsedData.date1).toISOString().split('T')[0];
+      }
+      if (parsedData.date2) {
+        parsedData.date2 = new Date(parsedData.date2).toISOString().split('T')[0];
+      }
+      
+      setFormData(parsedData);
     }
   }, []);
 
   const handleInputChange = (field: string, value: string | boolean) => {
+    let finalValue = value;
+    
+    // If this is a date field, add current time
+    if (field === 'date1' || field === 'date2') {
+      if (typeof value === 'string' && value) {
+        // For storage: combine the date with current time
+        const date = new Date(value + 'T00:00:00');
+        const now = new Date();
+        date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        finalValue = date.toISOString();
+      }
+    }
+    
     const updatedData = {
       ...formData,
-      [field]: value
+      [field]: finalValue
     };
-    setFormData(updatedData);
+    
+    // For display: if it's a date field, keep the YYYY-MM-DD format in the state
+    if ((field === 'date1' || field === 'date2') && typeof value === 'string' && value) {
+      setFormData({
+        ...formData,
+        [field]: value // Keep the YYYY-MM-DD format in the state for the input
+      });
+    } else {
+      setFormData(updatedData);
+    }
+    
+    // For storage: store the full data including ISO date strings
     localStorage.setItem('step6Data', JSON.stringify(updatedData));
   };
 

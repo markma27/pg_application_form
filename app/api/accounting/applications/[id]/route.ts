@@ -8,15 +8,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verify accounting team authentication
+    // Verify authentication
     const authResult = await verifyAccountingTeamAuth(request)
     if (!authResult.valid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: authResult.error || 'Unauthorized' },
+        { status: 401 }
+      )
     }
-    
-    const applicationId = params.id
-    
-    // Get application with documents
+
+    // Fetch application data
     const { data: application, error } = await supabaseAdmin
       .from('applications')
       .select(`
@@ -32,31 +33,42 @@ export async function GET(
           id,
           notes,
           created_at,
-          accounting_users!inner(name)
+          accounting_users (
+            name
+          )
         )
       `)
-      .eq('id', applicationId)
+      .eq('id', params.id)
       .single()
-    
-    if (error || !application) {
-      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+
+    if (error) {
+      console.error('Database error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch application' },
+        { status: 500 }
+      )
     }
-    
+
+    if (!application) {
+      return NextResponse.json(
+        { error: 'Application not found' },
+        { status: 404 }
+      )
+    }
+
     // Decrypt sensitive fields
     const decryptedApplication = decryptApplicationData(application)
-    
+
     // Log access
-    await logAccountingAccess(applicationId, authResult.userId!, 'view_application', request)
-    
-    return NextResponse.json({ 
-      data: decryptedApplication,
-      accessedBy: authResult.user?.name || 'Unknown',
-      accessedAt: new Date().toISOString()
-    })
-    
+    await logAccountingAccess(params.id, authResult.userId!, 'view', request)
+
+    return NextResponse.json({ data: decryptedApplication })
   } catch (error) {
-    console.error('Error retrieving application:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in application fetch:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
 

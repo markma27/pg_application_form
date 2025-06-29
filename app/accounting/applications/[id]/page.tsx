@@ -10,9 +10,10 @@ interface ApplicationData {
   entity_name: string
   entity_type: string
   australian_business_number?: string
+  australian_company_number?: string
   is_registered_for_gst: boolean
   holder_identification_number?: string
-  tax_file_number?: string
+  tax_file_number?: string | { decrypted: string }
   street_address: string
   city: string
   state: string
@@ -77,6 +78,19 @@ interface ApplicationData {
       name: string
     }
   }>
+  signature1?: string
+  date1?: string
+  signature2?: string
+  date2?: string
+  final_signature?: string
+  final_signature_date?: string
+  has_acknowledged: boolean
+  has_read_terms: boolean
+  has_accepted_privacy: boolean
+  has_confirmed_information: boolean
+  privacy_policy_accepted: boolean
+  terms_of_service_accepted: boolean
+  data_processing_consent: boolean
 }
 
 // 日期格式化函数
@@ -87,6 +101,24 @@ function formatDate(dateString: string) {
     month: '2-digit',
     year: 'numeric'
   });
+}
+
+// 首字母大写函数
+function capitalizeFirstLetter(str: string) {
+  // 特殊情况处理
+  const specialCases: { [key: string]: string } = {
+    'smsf': 'SMSF',
+    'tfn': 'TFN',
+    'abn': 'ABN',
+    'acn': 'ACN'
+  };
+
+  const lowerStr = str.toLowerCase();
+  if (specialCases[lowerStr]) {
+    return specialCases[lowerStr];
+  }
+
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
 // 文件大小格式化函数
@@ -300,33 +332,49 @@ export default function ApplicationDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Entity Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.entity_name}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.entity_name}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Entity Type</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.entity_type}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{capitalizeFirstLetter(application.entity_type)}</p>
                 </div>
                 {application.australian_business_number && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">ABN</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.australian_business_number}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.australian_business_number}</p>
+                  </div>
+                )}
+                {application.australian_company_number && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ACN</label>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.australian_company_number}</p>
                   </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">GST Registered</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <p className="mt-1 text-sm font-medium text-green-600">
                     {application.is_registered_for_gst ? 'Yes' : 'No'}
                   </p>
                 </div>
                 {application.holder_identification_number && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Holder ID</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.holder_identification_number}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.holder_identification_number}</p>
+                  </div>
+                )}
+                {application.tax_file_number && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Tax File Number</label>
+                    <p className="mt-1 text-sm font-medium text-green-600">
+                      {typeof application.tax_file_number === 'string' 
+                        ? application.tax_file_number
+                        : application.tax_file_number.decrypted}
+                    </p>
                   </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Address</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <p className="mt-1 text-sm font-medium text-green-600">
                     {application.street_address}<br />
                     {application.city}, {application.state} {application.post_code}
                   </p>
@@ -334,19 +382,21 @@ export default function ApplicationDetail() {
               </div>
 
               {/* Trustee Information */}
-              {application.trustee_type && (
+              {["trust", "smsf", "foundation"].includes(application.entity_type.toLowerCase()) && (
                 <div className="mt-6">
                   <h3 className="text-md font-semibold text-gray-900 mb-3">Trustee Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Trustee Type</label>
-                      <p className="mt-1 text-sm text-gray-900">{application.trustee_type}</p>
+                      <p className="mt-1 text-sm font-medium text-green-600">
+                        {application.trustee_type ? capitalizeFirstLetter(application.trustee_type) : '-'}
+                      </p>
                     </div>
                     {application.trustee_type === 'individual' && (
                       <>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Trustee Name</label>
-                          <p className="mt-1 text-sm text-gray-900">
+                          <p className="mt-1 text-sm font-medium text-green-600">
                             {application.trustee_individual_first_name} {application.trustee_individual_last_name}
                           </p>
                         </div>
@@ -356,13 +406,13 @@ export default function ApplicationDetail() {
                       <>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Joint Trustee 1</label>
-                          <p className="mt-1 text-sm text-gray-900">
+                          <p className="mt-1 text-sm font-medium text-green-600">
                             {application.trustee_joint_first_name1} {application.trustee_joint_last_name1}
                           </p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Joint Trustee 2</label>
-                          <p className="mt-1 text-sm text-gray-900">
+                          <p className="mt-1 text-sm font-medium text-green-600">
                             {application.trustee_joint_first_name2} {application.trustee_joint_last_name2}
                           </p>
                         </div>
@@ -372,11 +422,11 @@ export default function ApplicationDetail() {
                       <>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Corporate Trustee</label>
-                          <p className="mt-1 text-sm text-gray-900">{application.trustee_corporate_name}</p>
+                          <p className="mt-1 text-sm font-medium text-green-600">{application.trustee_corporate_name}</p>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700">ACN</label>
-                          <p className="mt-1 text-sm text-gray-900">{application.trustee_corporate_acn}</p>
+                          <p className="mt-1 text-sm font-medium text-green-600">{application.trustee_corporate_acn}</p>
                         </div>
                       </>
                     )}
@@ -391,25 +441,25 @@ export default function ApplicationDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Main Contact</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <p className="mt-1 text-sm font-medium text-green-600">
                     {application.main_contact_first_name} {application.main_contact_last_name}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Role</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.main_contact_role}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.main_contact_role}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.contact_email}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.contact_email}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.contact_phone}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.contact_phone}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Preferred Contact Method</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.main_contact_preferred_contact}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.main_contact_preferred_contact}</p>
                 </div>
               </div>
 
@@ -419,25 +469,25 @@ export default function ApplicationDetail() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Name</label>
-                      <p className="mt-1 text-sm text-gray-900">
+                      <p className="mt-1 text-sm font-medium text-green-600">
                         {application.secondary_first_name} {application.secondary_last_name}
                       </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Role</label>
-                      <p className="mt-1 text-sm text-gray-900">{application.secondary_role}</p>
+                      <p className="mt-1 text-sm font-medium text-green-600">{application.secondary_role}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <p className="mt-1 text-sm text-gray-900">{application.secondary_email}</p>
+                      <p className="mt-1 text-sm font-medium text-green-600">{application.secondary_email}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Phone</label>
-                      <p className="mt-1 text-sm text-gray-900">{application.secondary_phone}</p>
+                      <p className="mt-1 text-sm font-medium text-green-600">{application.secondary_phone}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Preferred Contact Method</label>
-                      <p className="mt-1 text-sm text-gray-900">{application.secondary_preferred_contact}</p>
+                      <p className="mt-1 text-sm font-medium text-green-600">{application.secondary_preferred_contact}</p>
                     </div>
                   </div>
                 </div>
@@ -451,27 +501,27 @@ export default function ApplicationDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Adviser Name</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.adviser_name}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.adviser_name}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Company</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.adviser_company_name}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.adviser_company_name}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Address</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.adviser_address}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.adviser_address}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Phone</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.adviser_telephone}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.adviser_telephone}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.adviser_email}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.adviser_email}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Permissions</label>
-                    <p className="mt-1 text-sm text-gray-900">
+                    <p className="mt-1 text-sm font-medium text-green-600">
                       {application.adviser_is_primary_contact && 'Primary Contact'}<br />
                       {application.adviser_can_access_statements && 'Can Access Statements'}<br />
                       {application.adviser_can_deal_direct && 'Can Deal Direct'}
@@ -487,19 +537,19 @@ export default function ApplicationDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Annual Report Delivery</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.annual_report}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.annual_report}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Meeting Proxy</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.meeting_proxy}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.meeting_proxy}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Investment Offers</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.investment_offers}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.investment_offers}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Dividend Preference</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.dividend_preference}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.dividend_preference}</p>
                 </div>
               </div>
             </div>
@@ -510,27 +560,128 @@ export default function ApplicationDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Account Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.account_name}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.account_name}</p>
                 </div>
                 {application.bank_name && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Bank Name</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.bank_name}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.bank_name}</p>
                   </div>
                 )}
                 {application.branch_name && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Branch</label>
-                    <p className="mt-1 text-sm text-gray-900">{application.branch_name}</p>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.branch_name}</p>
                   </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">BSB</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.bsb}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.bsb}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Account Number</label>
-                  <p className="mt-1 text-sm text-gray-900">{application.account_number}</p>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.account_number}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">First Signature</label>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.signature1 || 'Not provided'}</p>
+                  <p className="text-xs text-gray-500">
+                    {application.date1 ? new Date(application.date1).toLocaleString('en-AU', {
+                      timeZone: 'Australia/Sydney',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }) : ''}
+                  </p>
+                </div>
+                {application.signature2 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Second Signature</label>
+                    <p className="mt-1 text-sm font-medium text-green-600">{application.signature2}</p>
+                    <p className="text-xs text-gray-500">
+                      {application.date2 ? new Date(application.date2).toLocaleString('en-AU', {
+                        timeZone: 'Australia/Sydney',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      }) : ''}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Signatures and Consent */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Final Signature and Consent</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Final Signature</label>
+                  <p className="mt-1 text-sm font-medium text-green-600">{application.final_signature || 'Not provided'}</p>
+                  <p className="text-xs text-gray-500">
+                    {application.final_signature_date ? new Date(application.final_signature_date).toLocaleString('en-AU', {
+                      timeZone: 'Australia/Sydney',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }) : ''}
+                  </p>
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Confirmations</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.has_acknowledged ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Acknowledged Application</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.has_read_terms ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Read Terms and Conditions</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.has_accepted_privacy ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Accepted Privacy Policy</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.has_confirmed_information ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Confirmed Information Accuracy</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.privacy_policy_accepted ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Privacy Policy Accepted</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.terms_of_service_accepted ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Terms of Service Accepted</span>
+                    </div>
+                    <div className="flex items-center">
+                      <svg className={`w-4 h-4 mr-2 ${application.data_processing_consent ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-600">Data Processing Consent Given</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -543,7 +694,7 @@ export default function ApplicationDetail() {
                   {application.application_documents.map((doc) => (
                     <div key={doc.id} className="flex justify-between items-center">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{doc.file_name}</p>
+                        <p className="text-sm font-medium text-green-600">{doc.file_name}</p>
                         <p className="text-sm text-gray-500">
                           {doc.document_type} • {formatFileSize(doc.file_size)} • 
                           Uploaded {formatDate(doc.uploaded_at)}

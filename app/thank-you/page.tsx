@@ -6,7 +6,13 @@ import Image from 'next/image';
 
 export default function ThankYouPage() {
   const [applicationId] = React.useState(() => {
-    return `PG-${Date.now().toString(36).toUpperCase()}`;
+    // Get the reference number from localStorage
+    const reviewData = localStorage.getItem('reviewData');
+    if (reviewData) {
+      const parsedData = JSON.parse(reviewData);
+      return parsedData.reference_number;
+    }
+    return 'Loading...';
   });
 
   return (

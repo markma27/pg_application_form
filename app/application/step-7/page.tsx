@@ -6,6 +6,11 @@ import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
+// 获取今天的日期，格式为YYYY-MM-DD
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
 export default function Step7Page() {
   const router = useRouter();
   const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
@@ -15,30 +20,56 @@ export default function Step7Page() {
     hasAcceptedPrivacy: false,
     hasConfirmedInformation: false,
     signature: '',
-    signatureDate: '',
+    signatureDate: getTodayDate(), // 设置今天的日期作为默认值
   });
 
   // Load saved data when component mounts
   React.useEffect(() => {
     const savedData = localStorage.getItem('step7Data');
     if (savedData) {
-      setFormData(JSON.parse(savedData));
-    } else {
-      // Set current date if no saved data
-      const today = new Date().toISOString().split('T')[0];
-      setFormData(prev => ({
-        ...prev,
-        signatureDate: today
-      }));
+      const parsedData = JSON.parse(savedData);
+      
+      // Convert ISO date back to YYYY-MM-DD format for date input
+      if (parsedData.signatureDate) {
+        parsedData.signatureDate = new Date(parsedData.signatureDate).toISOString().split('T')[0];
+      } else {
+        parsedData.signatureDate = getTodayDate(); // 如果没有保存的日期，使用今天的日期
+      }
+      
+      setFormData(parsedData);
     }
   }, []);
 
   const handleInputChange = (field: string, value: boolean | string) => {
+    let finalValue = value;
+    
+    // If this is a date field, add current time
+    if (field === 'signatureDate') {
+      if (typeof value === 'string' && value) {
+        // For storage: combine the date with current time
+        const date = new Date(value + 'T00:00:00');
+        const now = new Date();
+        date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        finalValue = date.toISOString();
+      }
+    }
+    
     const updatedData = {
       ...formData,
-      [field]: value
+      [field]: finalValue
     };
-    setFormData(updatedData);
+    
+    // For display: if it's a date field, keep the YYYY-MM-DD format in the state
+    if (field === 'signatureDate' && typeof value === 'string' && value) {
+      setFormData({
+        ...formData,
+        [field]: value // Keep the YYYY-MM-DD format in the state for the input
+      });
+    } else {
+      setFormData(updatedData);
+    }
+    
+    // For storage: store the full data including ISO date string
     localStorage.setItem('step7Data', JSON.stringify(updatedData));
   };
 
@@ -85,7 +116,7 @@ export default function Step7Page() {
       hasAcceptedPrivacy: false,
       hasConfirmedInformation: false,
       signature: '',
-      signatureDate: ''
+      signatureDate: getTodayDate()
     });
     
     // Close dialog and redirect to home page
