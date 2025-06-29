@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useAutoLogout } from './login/page'
+import { useAutoLogout } from '@/app/hooks/useAutoLogout'
 
 interface Application {
   id: string
