@@ -1,8 +1,54 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+
+// 创建一个可重用的自动登出 hook
+export function useAutoLogout(router: any) {
+  const [lastActivity, setLastActivity] = useState(Date.now())
+
+  useEffect(() => {
+    const resetInactivityTimer = () => {
+      setLastActivity(Date.now());
+    };
+
+    const checkInactivity = () => {
+      const currentTime = Date.now();
+      const inactiveTime = currentTime - lastActivity;
+      const fifteenMinutes = 15 * 60 * 1000;
+
+      if (inactiveTime >= fifteenMinutes && typeof window !== 'undefined') {
+        localStorage.removeItem('accounting_token');
+        localStorage.removeItem('accounting_user');
+        router.push('/accounting/login');
+      }
+    };
+
+    const activityInterval = setInterval(checkInactivity, 60 * 1000);
+
+    const activityEvents = [
+      'mousedown',
+      'mousemove',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+      'keypress'
+    ];
+
+    activityEvents.forEach(eventName => {
+      document.addEventListener(eventName, resetInactivityTimer);
+    });
+
+    return () => {
+      clearInterval(activityInterval);
+      activityEvents.forEach(eventName => {
+        document.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
+  }, [lastActivity, router]);
+}
 
 export default function AccountingLogin() {
   const router = useRouter()
@@ -12,6 +58,19 @@ export default function AccountingLogin() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // 使用自动登出 hook
+  useAutoLogout(router);
+
+  useEffect(() => {
+    // 检查是否已登录
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accounting_token')
+      if (token) {
+        router.push('/accounting')
+      }
+    }
+  }, [router])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -37,11 +96,10 @@ export default function AccountingLogin() {
       const data = await response.json()
 
       if (response.ok) {
-        // Store token and user data
-        localStorage.setItem('accounting_token', data.token)
-        localStorage.setItem('accounting_user', JSON.stringify(data.user))
-        
-        // Redirect to accounting portal
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('accounting_token', data.token)
+          localStorage.setItem('accounting_user', JSON.stringify(data.user))
+        }
         router.push('/accounting')
       } else {
         setError(data.error || 'Login failed')

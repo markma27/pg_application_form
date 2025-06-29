@@ -1,19 +1,20 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function ThankYouPage() {
-  const [applicationId] = React.useState(() => {
-    // Get the reference number from localStorage
+  const [applicationId, setApplicationId] = useState('Loading...');
+
+  useEffect(() => {
+    // Get the reference number from localStorage only on client side
     const reviewData = localStorage.getItem('reviewData');
     if (reviewData) {
       const parsedData = JSON.parse(reviewData);
-      return parsedData.reference_number;
+      setApplicationId(parsedData.reference_number);
     }
-    return 'Loading...';
-  });
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">

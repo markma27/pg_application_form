@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useAutoLogout } from './login/page'
 
 interface Application {
   id: string
@@ -49,17 +50,23 @@ export default function AccountingPortal() {
   const [searchTerm, setSearchTerm] = useState('')
   const [totalApplications, setTotalApplications] = useState(0)
   const [user, setUser] = useState<any>(null)
+  const [error, setError] = useState('')
+
+  // 使用自动登出 hook
+  useAutoLogout(router);
 
   const checkAuth = useCallback(() => {
-    const token = localStorage.getItem('accounting_token')
-    const userData = localStorage.getItem('accounting_user')
-    
-    if (!token || !userData) {
-      router.push('/accounting/login')
-      return
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accounting_token')
+      const userData = localStorage.getItem('accounting_user')
+      
+      if (!token || !userData) {
+        router.push('/accounting/login')
+        return
+      }
+      
+      setUser(JSON.parse(userData))
     }
-    
-    setUser(JSON.parse(userData))
   }, [router])
 
   const fetchApplications = useCallback(async () => {
@@ -102,9 +109,11 @@ export default function AccountingPortal() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('accounting_token')
-    localStorage.removeItem('accounting_user')
-    router.push('/accounting/login')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accounting_token')
+      localStorage.removeItem('accounting_user')
+      router.push('/accounting/login')
+    }
   }
 
   // 过滤应用列表

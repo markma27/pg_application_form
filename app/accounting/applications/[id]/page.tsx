@@ -139,17 +139,72 @@ export default function ApplicationDetail() {
   const [user, setUser] = useState<any>(null)
   const [newNote, setNewNote] = useState('')
   const [submittingNote, setSubmittingNote] = useState(false)
+  const [lastActivity, setLastActivity] = useState(Date.now())
+
+  // 自动登出功能
+  useEffect(() => {
+    let inactivityTimeout: NodeJS.Timeout;
+
+    const resetInactivityTimer = () => {
+      setLastActivity(Date.now());
+    };
+
+    const checkInactivity = () => {
+      const currentTime = Date.now();
+      const inactiveTime = currentTime - lastActivity;
+      const fifteenMinutes = 15 * 60 * 1000; // 15分钟转换为毫秒
+
+      if (inactiveTime >= fifteenMinutes) {
+        // 清除本地存储的登录信息
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accounting_token');
+          localStorage.removeItem('accounting_user');
+        }
+        // 重定向到登录页面
+        router.push('/accounting/login');
+      }
+    };
+
+    // 设置定时器每分钟检查一次不活动状态
+    const activityInterval = setInterval(checkInactivity, 60 * 1000);
+
+    // 监听用户活动事件
+    const activityEvents = [
+      'mousedown',
+      'mousemove',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+      'keypress'
+    ];
+
+    // 添加所有活动事件监听器
+    activityEvents.forEach(eventName => {
+      document.addEventListener(eventName, resetInactivityTimer);
+    });
+
+    // 组件卸载时清理
+    return () => {
+      clearInterval(activityInterval);
+      activityEvents.forEach(eventName => {
+        document.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
+  }, [lastActivity, router]);
 
   const checkAuth = useCallback(() => {
-    const token = localStorage.getItem('accounting_token')
-    const userData = localStorage.getItem('accounting_user')
-    
-    if (!token || !userData) {
-      router.push('/accounting/login')
-      return
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accounting_token')
+      const userData = localStorage.getItem('accounting_user')
+      
+      if (!token || !userData) {
+        router.push('/accounting/login')
+        return
+      }
+      
+      setUser(JSON.parse(userData))
     }
-    
-    setUser(JSON.parse(userData))
   }, [router])
 
   const fetchApplication = useCallback(async () => {
@@ -157,13 +212,15 @@ export default function ApplicationDetail() {
       setLoading(true)
       const response = await fetch(`/api/accounting/applications/${applicationId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('accounting_token') : ''}`
         }
       })
       
       if (response.status === 401) {
-        localStorage.removeItem('accounting_token')
-        localStorage.removeItem('accounting_user')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accounting_token')
+          localStorage.removeItem('accounting_user')
+        }
         router.push('/accounting/login')
         return
       }
@@ -203,7 +260,7 @@ export default function ApplicationDetail() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('accounting_token') : ''}`
         },
         body: JSON.stringify({
           action: 'add_notes',
@@ -233,7 +290,7 @@ export default function ApplicationDetail() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accounting_token')}`
+          'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('accounting_token') : ''}`
         },
         body: JSON.stringify({
           action: 'mark_reviewed',
