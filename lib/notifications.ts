@@ -1,7 +1,10 @@
 import { Resend } from 'resend'
 import { supabaseAdmin } from './supabase'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend client only when needed to avoid build-time errors
+function getResendClient() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export interface NotificationData {
   to: string | string[]
@@ -15,6 +18,7 @@ export async function sendSecureNotification(notification: NotificationData) {
     const emailContent = generateEmailContent(notification.template, notification.data)
     
     // Send email using Resend
+    const resend = getResendClient()
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'noreply@portfolioguardian.com',
       to: Array.isArray(notification.to) ? notification.to : [notification.to],
