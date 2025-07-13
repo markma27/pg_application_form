@@ -41,6 +41,15 @@ interface ApplicationData {
   secondary_email?: string
   secondary_phone?: string
   secondary_preferred_contact?: string
+  fatca_crs_owners?: Array<{
+    fullLegalName: string
+    residentialAddress: string
+    dateOfBirth: string
+    position: string
+    ownershipPercentage: string
+    countryOfTaxResidence: string
+    taxFileNumber: string
+  }>
   adviser_name?: string
   adviser_company_name?: string
   adviser_address?: string
@@ -552,6 +561,91 @@ export default function ApplicationDetail() {
               )}
             </div>
 
+            {/* FATCA/CRS Beneficial Owners (Step 4) */}
+            {application.fatca_crs_owners && application.fatca_crs_owners.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  FATCA/CRS Beneficial Owners 
+                  <span className="ml-2 text-sm font-normal text-gray-600">
+                    ({application.fatca_crs_owners.length} owner{application.fatca_crs_owners.length > 1 ? 's' : ''})
+                  </span>
+                </h2>
+                <div className="space-y-6">
+                  {application.fatca_crs_owners.map((owner, index) => (
+                    <div key={index} className="border-l-4 border-green-500 pl-4">
+                      <h3 className="text-md font-semibold text-gray-900 mb-3">
+                        Beneficial Owner {index + 1}
+                        {owner.fullLegalName && (
+                          <span className="ml-2 text-sm font-normal text-green-600">
+                            - {owner.fullLegalName}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {owner.fullLegalName && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Legal Name</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.fullLegalName}</p>
+                          </div>
+                        )}
+                        {owner.residentialAddress && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Residential Address</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.residentialAddress}</p>
+                          </div>
+                        )}
+                        {owner.dateOfBirth && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.dateOfBirth}</p>
+                          </div>
+                        )}
+                        {owner.position && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Position</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.position}</p>
+                          </div>
+                        )}
+                        {owner.ownershipPercentage && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Ownership Percentage</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.ownershipPercentage}%</p>
+                          </div>
+                        )}
+                        {owner.countryOfTaxResidence && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Country of Tax Residence</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.countryOfTaxResidence}</p>
+                          </div>
+                        )}
+                        {owner.taxFileNumber && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Tax File Number</label>
+                            <p className="mt-1 text-sm font-medium text-green-600">{owner.taxFileNumber}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Total Ownership Summary */}
+                  {application.fatca_crs_owners.some(owner => owner.ownershipPercentage) && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-700">Total Ownership Percentage:</span>
+                        <span className="text-sm font-bold text-green-600">
+                          {application.fatca_crs_owners
+                            .filter(owner => owner.ownershipPercentage)
+                            .reduce((total, owner) => total + parseFloat(owner.ownershipPercentage || '0'), 0)
+                            .toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Adviser Information */}
             {application.adviser_name && (
               <div className="bg-white rounded-lg shadow p-6">
@@ -672,6 +766,19 @@ export default function ApplicationDetail() {
                     </p>
                   </div>
                 )}
+              </div>
+              
+              {/* Direct Debit Authority Confirmations */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Direct Debit Authority Confirmations</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <svg className={`w-4 h-4 mr-2 ${application.has_acknowledged ? 'text-green-600' : 'text-gray-200'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm text-gray-600">Acknowledged and Agreed to Direct Debit Authority Terms</span>
+                  </div>
+                </div>
               </div>
             </div>
 

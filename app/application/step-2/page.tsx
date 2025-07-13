@@ -122,6 +122,7 @@ export default function Step2Page() {
     localStorage.removeItem('step5Data');
     localStorage.removeItem('step6Data');
     localStorage.removeItem('step7Data');
+    localStorage.removeItem('step8Data');
     
     // Reset current form state
     setFormData({
@@ -183,7 +184,7 @@ export default function Step2Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={7} currentStep={2} completedSteps={[1]} />
+        <ProgressIndicator totalSteps={8} currentStep={2} completedSteps={[1]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

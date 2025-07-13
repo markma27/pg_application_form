@@ -18,14 +18,16 @@ function addCurrentTime(dateStr: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    // Flatten all steps
+    
+    // Correct step mapping after inserting FATCA/CRS at step 4
     const step1 = body.step1;
     const step2 = body.step2 || {};
     const step3 = body.step3 || {};
-    const step4 = body.step4 || {};
-    const step5 = body.step5 || {};
-    const step6 = body.step6 || {};
-    const step7 = body.step7 || {};
+    const step4 = body.step4 || []; // NEW: FATCA/CRS Details (BeneficialOwner array)
+    const step5 = body.step5 || {}; // Adviser Information (previously step 4)
+    const step6 = body.step6 || {}; // Investment Preferences (previously step 5)
+    const step7 = body.step7 || {}; // Bank Details (previously step 6)
+    const step8 = body.step8 || {}; // Terms & Conditions (previously step 7)
 
     // Generate UUID for application ID
     const applicationId = crypto.randomUUID();
@@ -35,9 +37,13 @@ export async function POST(request: NextRequest) {
     // Prepare application data
     const applicationData = {
       id: applicationId,
-      reference_number: referenceNumber, // Store the human readable reference
+      reference_number: referenceNumber,
       session_id: body.sessionId || `session_${Date.now()}`,
+      
+      // Step 1: Entity Type
       entity_type: step1 || '',
+      
+      // Step 2: Entity Details
       entity_name: step2.entityName || '',
       australian_business_number: step2.australianBusinessNumber || '',
       is_registered_for_gst: step2.isRegisteredForGST ?? null,
@@ -56,6 +62,8 @@ export async function POST(request: NextRequest) {
       trustee_joint_last_name2: step2.trusteeJointLastName2 || '',
       trustee_corporate_name: step2.trusteeCorporateName || '',
       trustee_corporate_acn: step2.trusteeCorporateACN || '',
+      
+      // Step 3: Contact Information
       main_contact_first_name: step3.firstName || '',
       main_contact_last_name: step3.lastName || '',
       main_contact_role: step3.role || '',
@@ -69,36 +77,51 @@ export async function POST(request: NextRequest) {
       secondary_email: step3.secondaryEmail || '',
       secondary_phone: step3.secondaryPhone || '',
       secondary_preferred_contact: step3.secondaryPreferredContact || '',
-      adviser_name: step4.adviserName || '',
-      adviser_company_name: step4.companyName || '',
-      adviser_address: step4.address || '',
-      adviser_telephone: step4.telephone || '',
-      adviser_email: step4.email || '',
-      adviser_is_primary_contact: step4.isPrimaryContact ?? null,
-      adviser_can_access_statements: step4.canAccessStatements ?? null,
-      adviser_can_deal_direct: step4.canDealDirect ?? null,
-      annual_report: step5.annualReport || '',
-      meeting_proxy: step5.meetingProxy || '',
-      investment_offers: step5.investmentOffers || '',
-      dividend_preference: step5.dividendPreference || '',
-      account_name: step6.accountName || '',
-      bank_name: step6.bankName || '',
-      branch_name: step6.branchName || '',
-      account_number: step6.accountNumber || '',
-      bsb: step6.bsb || '',
-      signature1: step6.signature1 || '',
-      signature2: step6.signature2 || '',
-      date1: addCurrentTime(step6.date1),
-      date2: addCurrentTime(step6.date2),
-      has_acknowledged: step6.hasAcknowledged ?? null,
-      has_read_terms: step7.hasReadTerms ?? null,
-      has_accepted_privacy: step7.hasAcceptedPrivacy ?? null,
-      has_confirmed_information: step7.hasConfirmedInformation ?? null,
-      final_signature: step7.signature || '',
-      final_signature_date: addCurrentTime(step7.signatureDate),
-      privacy_policy_accepted: step7.hasAcceptedPrivacy ?? false,
-      terms_of_service_accepted: step7.hasReadTerms ?? false,
-      data_processing_consent: step7.hasAcceptedPrivacy ?? false,
+      
+      // Step 4: FATCA/CRS Details (NEW)
+      fatca_crs_owners: Array.isArray(step4) ? step4 : [],
+      
+      // Step 5: Adviser Information (previously step 4)
+      adviser_name: step5.adviserName || '',
+      adviser_company_name: step5.companyName || '',
+      adviser_address: step5.address || '',
+      adviser_telephone: step5.telephone || '',
+      adviser_email: step5.email || '',
+      adviser_is_primary_contact: step5.isPrimaryContact ?? null,
+      adviser_can_access_statements: step5.canAccessStatements ?? null,
+      adviser_can_deal_direct: step5.canDealDirect ?? null,
+      
+      // Step 6: Investment Preferences (previously step 5)
+      annual_report: step6.annualReport || '',
+      meeting_proxy: step6.meetingProxy || '',
+      investment_offers: step6.investmentOffers || '',
+      dividend_preference: step6.dividendPreference || '',
+      
+      // Step 7: Bank Details (previously step 6)
+      account_name: step7.accountName || '',
+      bank_name: step7.bankName || '',
+      branch_name: step7.branchName || '',
+      account_number: step7.accountNumber || '',
+      bsb: step7.bsb || '',
+      signature1: step7.signature1 || '',
+      signature2: step7.signature2 || '',
+      date1: addCurrentTime(step7.date1),
+      date2: addCurrentTime(step7.date2),
+      has_acknowledged: step7.hasAcknowledged ?? null,
+      
+      // Step 8: Terms & Conditions (previously step 7)
+      has_read_terms: step8.hasReadTerms ?? null,
+      has_accepted_privacy: step8.hasAcceptedPrivacy ?? null,
+      has_confirmed_information: step8.hasConfirmedInformation ?? null,
+      final_signature: step8.signature || '',
+      final_signature_date: addCurrentTime(step8.signatureDate),
+      
+      // Legacy fields for compatibility
+      privacy_policy_accepted: step8.hasAcceptedPrivacy ?? false,
+      terms_of_service_accepted: step8.hasReadTerms ?? false,
+      data_processing_consent: step8.hasAcceptedPrivacy ?? false,
+      
+      // System fields
       is_submitted: true,
       submitted_at: new Date().toISOString(),
       created_at: new Date().toISOString(),

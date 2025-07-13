@@ -15,12 +15,16 @@ export default function Step7Page() {
   const router = useRouter();
   const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
-    // Identity Verification
-    hasReadTerms: false,
-    hasAcceptedPrivacy: false,
-    hasConfirmedInformation: false,
-    signature: '',
-    signatureDate: getTodayDate(), // 设置今天的日期作为默认值
+    accountName: '',
+    bankName: '',
+    branchName: '',
+    accountNumber: '',
+    bsb: '',
+    signature1: '',
+    signature2: '',
+    date1: '',
+    date2: '',
+    hasAcknowledged: false
   });
 
   // Load saved data when component mounts
@@ -29,22 +33,23 @@ export default function Step7Page() {
     if (savedData) {
       const parsedData = JSON.parse(savedData);
       
-      // Convert ISO date back to YYYY-MM-DD format for date input
-      if (parsedData.signatureDate) {
-        parsedData.signatureDate = new Date(parsedData.signatureDate).toISOString().split('T')[0];
-      } else {
-        parsedData.signatureDate = getTodayDate(); // 如果没有保存的日期，使用今天的日期
+      // Convert ISO dates back to YYYY-MM-DD format for date inputs
+      if (parsedData.date1) {
+        parsedData.date1 = new Date(parsedData.date1).toISOString().split('T')[0];
+      }
+      if (parsedData.date2) {
+        parsedData.date2 = new Date(parsedData.date2).toISOString().split('T')[0];
       }
       
       setFormData(parsedData);
     }
   }, []);
 
-  const handleInputChange = (field: string, value: boolean | string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     let finalValue = value;
     
     // If this is a date field, add current time
-    if (field === 'signatureDate') {
+    if (field === 'date1' || field === 'date2') {
       if (typeof value === 'string' && value) {
         // For storage: combine the date with current time
         const date = new Date(value + 'T00:00:00');
@@ -60,7 +65,7 @@ export default function Step7Page() {
     };
     
     // For display: if it's a date field, keep the YYYY-MM-DD format in the state
-    if (field === 'signatureDate' && typeof value === 'string' && value) {
+    if ((field === 'date1' || field === 'date2') && typeof value === 'string' && value) {
       setFormData({
         ...formData,
         [field]: value // Keep the YYYY-MM-DD format in the state for the input
@@ -69,17 +74,8 @@ export default function Step7Page() {
       setFormData(updatedData);
     }
     
-    // For storage: store the full data including ISO date string
+    // For storage: store the full data including ISO date strings
     localStorage.setItem('step7Data', JSON.stringify(updatedData));
-  };
-
-  const isFormValid = () => {
-    // All required fields must be filled
-    return formData.hasReadTerms && 
-           formData.hasAcceptedPrivacy && 
-           formData.hasConfirmedInformation &&
-           formData.signature?.trim() !== '' &&
-           formData.signatureDate?.trim() !== '';
   };
 
   const handleNext = () => {
@@ -89,7 +85,7 @@ export default function Step7Page() {
 
     // Save form data to localStorage
     localStorage.setItem('step7Data', JSON.stringify(formData));
-    router.push('/application/review');
+    router.push('/application/step-8');
   };
 
   const handlePrevious = () => {
@@ -109,14 +105,20 @@ export default function Step7Page() {
     localStorage.removeItem('step5Data');
     localStorage.removeItem('step6Data');
     localStorage.removeItem('step7Data');
+    localStorage.removeItem('step8Data');
     
     // Reset current form state
     setFormData({
-      hasReadTerms: false,
-      hasAcceptedPrivacy: false,
-      hasConfirmedInformation: false,
-      signature: '',
-      signatureDate: getTodayDate()
+      accountName: '',
+      bankName: '',
+      branchName: '',
+      accountNumber: '',
+      bsb: '',
+      signature1: '',
+      signature2: '',
+      date1: '',
+      date2: '',
+      hasAcknowledged: false
     });
     
     // Close dialog and redirect to home page
@@ -127,6 +129,22 @@ export default function Step7Page() {
   const handleRestartCancel = () => {
     setIsConfirmationOpen(false);
   };
+
+  const isFormValid = () => {
+    return (
+      formData.accountName?.trim() !== '' &&
+      formData.bsb?.trim() !== '' &&
+      formData.accountNumber?.trim() !== '' &&
+      formData.signature1?.trim() !== '' &&
+      formData.date1?.trim() !== '' &&
+      formData.hasAcknowledged
+    );
+  };
+
+  // Required field marker component
+  const RequiredMark = () => (
+    <span className="text-red-500 ml-1">*</span>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -146,119 +164,140 @@ export default function Step7Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={7} currentStep={7} completedSteps={[1, 2, 3, 4, 5, 6]} />
+        <ProgressIndicator totalSteps={8} currentStep={7} completedSteps={[1, 2, 3, 4, 5, 6]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-portfolio-green-600 mb-2">
-              Review and Submit
+              Direct Debit Authority
             </h2>
-            <p className="text-gray-600">
-              Please review the terms and conditions before submitting your application.
+            <p className="text-gray-600 mb-6">
+              Please provide your bank account details for direct debit arrangements.
             </p>
-          </div>
 
-          <div className="space-y-6">
-            {/* Terms and Conditions */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h3>
-              <div className="prose prose-sm max-w-none text-gray-600">
-                <p className="mb-4">
-                  By submitting this application, you acknowledge and agree to the following terms:
+            {/* Bank Account Details */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Name<RequiredMark />
+                </label>
+                <input
+                  type="text"
+                  value={formData.accountName}
+                  onChange={(e) => handleInputChange('accountName', e.target.value)}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  placeholder="Enter account name"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    BSB<RequiredMark />
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.bsb}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      handleInputChange('bsb', value);
+                    }}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter BSB (6 digits)"
+                    maxLength={6}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Account Number<RequiredMark />
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.accountNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      handleInputChange('accountNumber', value);
+                    }}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter account number"
+                    maxLength={9}
+                  />
+                </div>
+              </div>
+
+              {/* Direct Debit Authority Text */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6">
+                <p className="text-sm text-gray-700 mb-4">
+                  We request and authorise through PortfolioGuardian (User ID 419702) to arrange for any amount PortfolioGuardian may debit or charge to be debited through the Bulk Electronic Clearing System from the nominated bank account, subject to the terms and conditions of the Direct Debit Request Service Agreement.
                 </p>
-                <ul className="list-disc list-inside space-y-2 mb-4">
-                  <li>All information provided is accurate and complete to the best of your knowledge.</li>
-                  <li>You authorize PortfolioGuardian to verify any information provided in this application.</li>
-                  <li>You understand that false or misleading information may result in the rejection of your application.</li>
-                  <li>You agree to notify PortfolioGuardian of any material changes to the information provided.</li>
-                  <li>You understand that submission of this application does not guarantee acceptance.</li>
-                </ul>
-                <p>
-                  For complete terms and conditions, please refer to our full service agreement.
+                <p className="text-sm text-gray-700 mb-4">
+                  By signing this Direct Debit Authority I/we acknowledge having read and understood the terms and conditions governing the debit arrangements between us and PortfolioGuardian as set out in this Authority and in the Direct Debit Request Service Agreement (outlined herein).
+                </p>
+                <p className="text-sm text-gray-700 mb-4">
+                  I/we authorise PortfolioGuardian to debit the nominated bank account, of which the details have been provided to PortfolioGuardian.
+                </p>
+                <p className="text-sm text-gray-700">
+                  I/we acknowledge that the first debit will occur within one month of signing the PortfolioGuardian application form, based on the relevant fee category as outlined in this client pack.
                 </p>
               </div>
-            </div>
 
-            {/* Checkboxes */}
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
+              {/* Acknowledgment Checkbox */}
+              <div className="mt-6">
+                <label className="flex items-center space-x-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.hasReadTerms}
-                    onChange={(e) => handleInputChange('hasReadTerms', e.target.checked)}
-                    className="w-4 h-4 text-portfolio-green-600 border-gray-300 rounded focus:ring-portfolio-green-500"
+                    checked={formData.hasAcknowledged}
+                    onChange={(e) => handleInputChange('hasAcknowledged', e.target.checked)}
+                    className="h-5 w-5 rounded border-gray-300 text-portfolio-green-600 focus:ring-portfolio-green-500"
                   />
-                </div>
-                <div className="ml-3">
-                  <label className="text-sm text-gray-700">
-                    I have read and understood the terms and conditions
-                  </label>
-                </div>
+                  <span className="text-sm text-gray-700">
+                    I acknowledge and agree to the Direct Debit Authority terms and conditions<RequiredMark />
+                  </span>
+                </label>
               </div>
 
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
+              {/* Signatures */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Signature 1<RequiredMark />
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={formData.hasAcceptedPrivacy}
-                    onChange={(e) => handleInputChange('hasAcceptedPrivacy', e.target.checked)}
-                    className="w-4 h-4 text-portfolio-green-600 border-gray-300 rounded focus:ring-portfolio-green-500"
+                    type="text"
+                    value={formData.signature1}
+                    onChange={(e) => handleInputChange('signature1', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter full name as signature"
                   />
-                </div>
-                <div className="ml-3">
-                  <label className="text-sm text-gray-700">
-                    I agree to the privacy policy and consent to the collection and use of my personal information
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
                   <input
-                    type="checkbox"
-                    checked={formData.hasConfirmedInformation}
-                    onChange={(e) => handleInputChange('hasConfirmedInformation', e.target.checked)}
-                    className="w-4 h-4 text-portfolio-green-600 border-gray-300 rounded focus:ring-portfolio-green-500"
+                    type="date"
+                    value={formData.date1}
+                    onChange={(e) => handleInputChange('date1', e.target.value)}
+                    className="mt-2 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
                   />
                 </div>
-                <div className="ml-3">
-                  <label className="text-sm text-gray-700">
-                    I confirm that all information provided in this application is true and accurate
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Signature 2 (if applicable)
                   </label>
+                  <input
+                    type="text"
+                    value={formData.signature2}
+                    onChange={(e) => handleInputChange('signature2', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter full name as signature"
+                  />
+                  <input
+                    type="date"
+                    value={formData.date2}
+                    onChange={(e) => handleInputChange('date2', e.target.value)}
+                    className="mt-2 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                  />
                 </div>
               </div>
-            </div>
-
-            {/* Digital Signature */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Digital Signature <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.signature}
-                onChange={(e) => handleInputChange('signature', e.target.value)}
-                className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                placeholder="Type your full name as signature"
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                By typing your name above, you are signing this application electronically.
-              </p>
-            </div>
-
-            {/* Signature Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                value={formData.signatureDate}
-                onChange={(e) => handleInputChange('signatureDate', e.target.value)}
-                className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-              />
             </div>
           </div>
 
@@ -287,12 +326,11 @@ export default function Step7Page() {
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              Review
+              Next
             </button>
           </div>
         </div>
 
-        {/* Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={isConfirmationOpen}
           title="Restart Application"

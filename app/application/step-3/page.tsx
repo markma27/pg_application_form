@@ -172,7 +172,7 @@ export default function Step3Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={7} currentStep={3} completedSteps={[1, 2]} />
+        <ProgressIndicator totalSteps={8} currentStep={3} completedSteps={[1, 2]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">

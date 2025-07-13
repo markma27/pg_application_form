@@ -6,77 +6,116 @@ import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
+interface BeneficialOwner {
+  fullLegalName: string;
+  residentialAddress: string;
+  dateOfBirth: string;
+  position: string;
+  ownershipPercentage: string;
+  countryOfTaxResidence: string;
+  taxFileNumber: string;
+}
+
+const defaultBeneficialOwner: BeneficialOwner = {
+  fullLegalName: '',
+  residentialAddress: '',
+  dateOfBirth: '',
+  position: '',
+  ownershipPercentage: '',
+  countryOfTaxResidence: 'Australia',
+  taxFileNumber: ''
+};
+
 export default function Step4Page() {
   const router = useRouter();
   const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState({
-    adviserName: '',
-    companyName: '',
-    address: '',
-    telephone: '',
-    email: '',
-    isPrimaryContact: null as boolean | null,
-    canAccessStatements: null as boolean | null,
-    canDealDirect: null as boolean | null
-  });
+  const [beneficialOwners, setBeneficialOwners] = React.useState<BeneficialOwner[]>([defaultBeneficialOwner]);
 
   // Load saved data when component mounts
   React.useEffect(() => {
-    const savedData = localStorage.getItem('step4Data');
-    if (savedData) {
-      setFormData(JSON.parse(savedData));
+    try {
+      const savedData = localStorage.getItem('step4Data');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          setBeneficialOwners(parsedData);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading step 4 data:', error);
+      setBeneficialOwners([defaultBeneficialOwner]);
     }
   }, []);
 
-  const handleInputChange = (field: string, value: string | boolean | null) => {
-    const updatedData = {
-      ...formData,
+  const handleInputChange = (index: number, field: keyof BeneficialOwner, value: string) => {
+    const updatedOwners = [...beneficialOwners];
+    updatedOwners[index] = {
+      ...updatedOwners[index],
       [field]: value
     };
-    setFormData(updatedData);
-    // Save to localStorage whenever data changes
-    localStorage.setItem('step4Data', JSON.stringify(updatedData));
+    setBeneficialOwners(updatedOwners);
+    localStorage.setItem('step4Data', JSON.stringify(updatedOwners));
+  };
+
+  const addBeneficialOwner = () => {
+    if (beneficialOwners.length >= 8) {
+      return;
+    }
+    setBeneficialOwners([...beneficialOwners, { ...defaultBeneficialOwner }]);
+  };
+
+  const removeBeneficialOwner = (index: number) => {
+    const updatedOwners = beneficialOwners.filter((_, i) => i !== index);
+    setBeneficialOwners(updatedOwners);
+    localStorage.setItem('step4Data', JSON.stringify(updatedOwners));
   };
 
   const isFormValid = () => {
-    // If no adviser information is provided, the form is valid
-    if (!formData.adviserName && !formData.companyName && !formData.address && 
-        !formData.telephone && !formData.email && formData.isPrimaryContact === null &&
-        formData.canAccessStatements === null && formData.canDealDirect === null) {
+    return beneficialOwners.every(owner => {
+      // All fields are optional now
+      if (!owner.fullLegalName && !owner.residentialAddress && !owner.dateOfBirth &&
+          !owner.position && !owner.ownershipPercentage && !owner.countryOfTaxResidence &&
+          !owner.taxFileNumber) {
+        return true;
+      }
+
+      // If any field is filled, validate the format
+      if (owner.ownershipPercentage && owner.ownershipPercentage.trim() !== '') {
+        const percentage = parseFloat(owner.ownershipPercentage);
+        if (isNaN(percentage) || percentage < 0 || percentage > 100) {
+          return false;
+        }
+      }
+
+      if (owner.dateOfBirth && owner.dateOfBirth.trim() !== '') {
+        const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/(19|20)\d\d$/;
+        if (!dateRegex.test(owner.dateOfBirth)) {
+          return false;
+        }
+      }
+
       return true;
-    }
-
-    // If any adviser information is provided, validate all fields
-    if (formData.adviserName || formData.companyName || formData.address || 
-        formData.telephone || formData.email || formData.isPrimaryContact !== null ||
-        formData.canAccessStatements !== null || formData.canDealDirect !== null) {
-      
-      // All fields must be filled if any field is filled
-      if (!formData.adviserName || !formData.companyName || !formData.address || 
-          !formData.telephone || !formData.email || formData.isPrimaryContact === null ||
-          formData.canAccessStatements === null || formData.canDealDirect === null) {
-        return false;
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        return false;
-      }
-
-      // Phone validation (Australian format)
-      const phoneRegex = /^(?:\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
-      if (!phoneRegex.test(formData.telephone)) {
-        return false;
-      }
-    }
-
-    return true;
+    });
   };
 
   const handleNext = () => {
-    // Save form data to localStorage (even if empty)
-    localStorage.setItem('step4Data', JSON.stringify(formData));
+    if (!isFormValid()) {
+      return;
+    }
+    
+    // Filter out empty beneficial owners (only have default values)
+    const filteredBeneficialOwners = beneficialOwners.filter(owner => {
+      // Check if any field other than the default countryOfTaxResidence is filled
+      return owner.fullLegalName?.trim() !== '' || 
+             owner.residentialAddress?.trim() !== '' || 
+             owner.dateOfBirth?.trim() !== '' || 
+             owner.position?.trim() !== '' || 
+             owner.ownershipPercentage?.trim() !== '' || 
+             owner.taxFileNumber?.trim() !== '' ||
+             (owner.countryOfTaxResidence?.trim() !== '' && owner.countryOfTaxResidence !== 'Australia');
+    });
+    
+    localStorage.setItem('step4Data', JSON.stringify(filteredBeneficialOwners));
     router.push('/application/step-5');
   };
 
@@ -97,18 +136,10 @@ export default function Step4Page() {
     localStorage.removeItem('step5Data');
     localStorage.removeItem('step6Data');
     localStorage.removeItem('step7Data');
+    localStorage.removeItem('step8Data');
     
     // Reset current form state
-    setFormData({
-      adviserName: '',
-      companyName: '',
-      address: '',
-      telephone: '',
-      email: '',
-      isPrimaryContact: null,
-      canAccessStatements: null,
-      canDealDirect: null
-    });
+    setBeneficialOwners([defaultBeneficialOwner]);
     
     // Close dialog and redirect to home page
     setIsConfirmationOpen(false);
@@ -117,6 +148,10 @@ export default function Step4Page() {
 
   const handleRestartCancel = () => {
     setIsConfirmationOpen(false);
+  };
+
+  const getTotalOwnershipPercentage = () => {
+    return beneficialOwners.reduce((total, owner) => total + parseFloat(owner.ownershipPercentage), 0);
   };
 
   return (
@@ -137,259 +172,168 @@ export default function Step4Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={7} currentStep={4} completedSteps={[1, 2, 3]} />
+        <ProgressIndicator totalSteps={8} currentStep={4} completedSteps={[1, 2, 3]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-portfolio-green-600 mb-2">
-              Investment Adviser Details
+              FATCA / CRS Details (Optional)
             </h2>
             <p className="text-gray-600">
-              You may provide your investment adviser&apos;s information (optional).
+              Due to the requirements imposed by the Common Reporting Standard (CRS) and the Foreign Account Tax Compliance Act (FATCA), we may be required to complete the CRS/FATCA forms based on the investments you hold. This may include providing details of the beneficial owners or controlling persons. If this information is not provided, tax will be withheld from any income payments.
+              <br/><br/>
+              To help us complete these forms efficiently on your behalf, please provide the details of the beneficial owners or controlling persons (up to 8). All fields in this section are optional. If you prefer not to provide this information, we will forward the CRS/FATCA forms to you for completion and submission.
             </p>
           </div>
 
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Adviser Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Adviser Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.adviserName}
-                  onChange={(e) => handleInputChange('adviserName', e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter adviser&apos;s name"
-                />
-              </div>
-
-              {/* Company Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Company Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => handleInputChange('companyName', e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter company name"
-                />
-              </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                placeholder="Enter business address"
-              />
-            </div>
-
-            {/* Contact Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Telephone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telephone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.telephone}
-                  onChange={(e) => handleInputChange('telephone', e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter telephone number"
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter email address"
-                />
-              </div>
-            </div>
-
-            {/* Authorizations */}
-            <div className="space-y-6">
-              {/* Primary Contact */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
-                  Do you nominate your Investment Adviser as the primary contact for your portfolio?
-                </label>
-                <div className="flex space-x-4">
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.isPrimaryContact === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('isPrimaryContact', formData.isPrimaryContact === true ? null : true)}
+          {beneficialOwners.map((owner, index) => (
+            <div key={index} className="mb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-portfolio-green-600">
+                  Beneficial Owner / Controlling Person {index + 1}
+                </h3>
+                {beneficialOwners.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeBeneficialOwner(index)}
+                    className="text-red-600 hover:text-red-700 focus:outline-none"
                   >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.isPrimaryContact === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.isPrimaryContact === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.isPrimaryContact === true && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
+                    Remove
+                  </button>
+                )}
+              </div>
 
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.isPrimaryContact === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('isPrimaryContact', formData.isPrimaryContact === false ? null : false)}
-                  >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.isPrimaryContact === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.isPrimaryContact === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.isPrimaryContact === false && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
+              <div className="space-y-6">
+                {/* Full Legal Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Legal Name
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.fullLegalName}
+                    onChange={(e) => handleInputChange(index, 'fullLegalName', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter full legal name"
+                  />
                 </div>
-              </div>
 
-              {/* Access to Statements */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
-                  Do you authorise your Investment Adviser to access your financial statements online?
-                </label>
-                <div className="flex space-x-4">
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.canAccessStatements === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('canAccessStatements', formData.canAccessStatements === true ? null : true)}
-                  >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.canAccessStatements === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.canAccessStatements === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.canAccessStatements === true && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.canAccessStatements === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('canAccessStatements', formData.canAccessStatements === false ? null : false)}
-                  >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.canAccessStatements === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.canAccessStatements === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.canAccessStatements === false && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
+                {/* Residential Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Residential Address
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.residentialAddress}
+                    onChange={(e) => handleInputChange(index, 'residentialAddress', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter residential address"
+                  />
                 </div>
-              </div>
 
-              {/* Direct Dealing */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-4">
-                  Do you authorise us to deal with your Investment Adviser directly?
-                </label>
-                <div className="flex space-x-4">
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.canDealDirect === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('canDealDirect', formData.canDealDirect === true ? null : true)}
-                  >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.canDealDirect === true ? 'text-gray-900' : 'text-gray-500'}`}>Yes</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.canDealDirect === true 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.canDealDirect === true && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
+                {/* Date of Birth */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.dateOfBirth}
+                    onChange={(e) => handleInputChange(index, 'dateOfBirth', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="dd/mm/yyyy"
+                  />
+                </div>
 
-                  <div
-                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 form-element-hover ${
-                      formData.canDealDirect === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-50' 
-                        : 'border-gray-200'
-                    }`}
-                    onClick={() => handleInputChange('canDealDirect', formData.canDealDirect === false ? null : false)}
-                  >
-                    <div className="flex-1">
-                      <div className={`font-medium ${formData.canDealDirect === false ? 'text-gray-900' : 'text-gray-500'}`}>No</div>
-                    </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${
-                      formData.canDealDirect === false 
-                        ? 'border-portfolio-green-500 bg-portfolio-green-500' 
-                        : 'border-gray-300'
-                    }`}>
-                      {formData.canDealDirect === false && (
-                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
-                      )}
-                    </div>
-                  </div>
+                {/* Position */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.position}
+                    onChange={(e) => handleInputChange(index, 'position', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter position"
+                  />
+                </div>
+
+                {/* Ownership Percentage */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ownership Percentage
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.ownershipPercentage}
+                    onChange={(e) => handleInputChange(index, 'ownershipPercentage', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter ownership percentage"
+                  />
+                </div>
+
+                {/* Country of Tax Residence */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Country of Tax Residence
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.countryOfTaxResidence}
+                    onChange={(e) => handleInputChange(index, 'countryOfTaxResidence', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter country of tax residence"
+                  />
+                </div>
+
+                {/* Tax File Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tax File Number
+                  </label>
+                  <input
+                    type="text"
+                    value={owner.taxFileNumber}
+                    onChange={(e) => handleInputChange(index, 'taxFileNumber', e.target.value)}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
+                    placeholder="Enter tax file number"
+                  />
                 </div>
               </div>
             </div>
+          ))}
+
+          {/* Add Another Beneficial Owner Button */}
+          <div className="mt-8">
+            {beneficialOwners.length < 8 ? (
+              <button
+                type="button"
+                onClick={addBeneficialOwner}
+                className="w-full px-6 py-2 border border-portfolio-green-500 text-portfolio-green-600 rounded-md font-medium hover:bg-portfolio-green-50 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500 transition-colors flex items-center justify-center"
+              >
+                Add Another Beneficial Owner / Controlling Person
+              </button>
+            ) : (
+              <p className="text-center text-gray-500 text-sm">
+                Maximum of 8 beneficial owners allowed
+              </p>
+            )}
           </div>
 
+          {/* Total Ownership Percentage Warning */}
+          {getTotalOwnershipPercentage() > 100 && (
+            <div className="mt-4 text-red-600 text-sm text-center">
+              Total ownership percentage cannot exceed 100%
+            </div>
+          )}
+
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-8">
+          <div className="mt-8 flex justify-between items-center">
             <button
+              type="button"
               onClick={handlePrevious}
               className="w-32 px-6 py-2 bg-gray-600 text-white rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center justify-center"
             >
@@ -397,6 +341,7 @@ export default function Step4Page() {
             </button>
 
             <button
+              type="button"
               onClick={handleRestartClick}
               className="w-32 px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors flex items-center justify-center"
             >
@@ -404,23 +349,29 @@ export default function Step4Page() {
             </button>
 
             <button
+              type="button"
               onClick={handleNext}
-              className="w-32 px-6 py-2 rounded-md font-medium transition-colors bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500 flex items-center justify-center"
+              disabled={!isFormValid()}
+              className={`w-32 px-6 py-2 rounded-md font-medium transition-colors flex items-center justify-center ${
+                isFormValid()
+                  ? 'bg-portfolio-green-600 text-white hover:bg-portfolio-green-700 focus:outline-none focus:ring-2 focus:ring-portfolio-green-500'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               Next
             </button>
           </div>
-
-          {/* Confirmation Dialog */}
-          <ConfirmationDialog
-            isOpen={isConfirmationOpen}
-            title="Restart Application"
-            message="Are you sure you want to restart the application? This will erase all completed information."
-            onConfirm={handleRestartConfirm}
-            onCancel={handleRestartCancel}
-          />
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isConfirmationOpen}
+        onConfirm={handleRestartConfirm}
+        onCancel={handleRestartCancel}
+        title="Restart Application"
+        message="Are you sure you want to restart the application? All your progress will be lost."
+      />
     </div>
   );
 } 

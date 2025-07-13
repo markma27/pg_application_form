@@ -5,75 +5,45 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { Button } from '@/components/ui/button';
 
 export default function Step6Page() {
   const router = useRouter();
   const [isConfirmationOpen, setIsConfirmationOpen] = React.useState(false);
   const [formData, setFormData] = React.useState({
-    accountName: '',
-    bankName: '',
-    branchName: '',
-    accountNumber: '',
-    bsb: '',
-    signature1: '',
-    signature2: '',
-    date1: '',
-    date2: '',
-    hasAcknowledged: false
+    // Investment Administration Details
+    annualReport: '' as string,
+    meetingProxy: '' as string,
+    investmentOffers: '' as string,
+    // Dividend Reinvestment Plan
+    dividendPreference: '',
   });
 
   // Load saved data when component mounts
   React.useEffect(() => {
     const savedData = localStorage.getItem('step6Data');
     if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      
-      // Convert ISO dates back to YYYY-MM-DD format for date inputs
-      if (parsedData.date1) {
-        parsedData.date1 = new Date(parsedData.date1).toISOString().split('T')[0];
-      }
-      if (parsedData.date2) {
-        parsedData.date2 = new Date(parsedData.date2).toISOString().split('T')[0];
-      }
-      
-      setFormData(parsedData);
+      setFormData(JSON.parse(savedData));
     }
   }, []);
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    let finalValue = value;
-    
-    // If this is a date field, add current time
-    if (field === 'date1' || field === 'date2') {
-      if (typeof value === 'string' && value) {
-        // For storage: combine the date with current time
-        const date = new Date(value + 'T00:00:00');
-        const now = new Date();
-        date.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-        finalValue = date.toISOString();
-      }
-    }
-    
+  const handleInputChange = (field: string, value: string | null) => {
     const updatedData = {
       ...formData,
-      [field]: finalValue
+      [field]: value || '', // Convert null to empty string
     };
-    
-    // For display: if it's a date field, keep the YYYY-MM-DD format in the state
-    if ((field === 'date1' || field === 'date2') && typeof value === 'string' && value) {
-      setFormData({
-        ...formData,
-        [field]: value // Keep the YYYY-MM-DD format in the state for the input
-      });
-    } else {
-      setFormData(updatedData);
-    }
-    
-    // For storage: store the full data including ISO date strings
+    setFormData(updatedData);
+    // Save to localStorage whenever data changes
     localStorage.setItem('step6Data', JSON.stringify(updatedData));
   };
 
   const handleNext = () => {
+    if (!isFormValid()) {
+      return;
+    }
+
+    // Save form data to localStorage
+    localStorage.setItem('step6Data', JSON.stringify(formData));
     router.push('/application/step-7');
   };
 
@@ -94,19 +64,14 @@ export default function Step6Page() {
     localStorage.removeItem('step5Data');
     localStorage.removeItem('step6Data');
     localStorage.removeItem('step7Data');
+    localStorage.removeItem('step8Data');
     
     // Reset current form state
     setFormData({
-      accountName: '',
-      bankName: '',
-      branchName: '',
-      accountNumber: '',
-      bsb: '',
-      signature1: '',
-      signature2: '',
-      date1: '',
-      date2: '',
-      hasAcknowledged: false
+      annualReport: '',
+      meetingProxy: '',
+      investmentOffers: '',
+      dividendPreference: '',
     });
     
     // Close dialog and redirect to home page
@@ -119,14 +84,13 @@ export default function Step6Page() {
   };
 
   const isFormValid = () => {
-    return (
-      formData.accountName?.trim() !== '' &&
-      formData.bsb?.trim() !== '' &&
-      formData.accountNumber?.trim() !== '' &&
-      formData.signature1?.trim() !== '' &&
-      formData.date1?.trim() !== '' &&
-      formData.hasAcknowledged
-    );
+    // All required fields must be filled
+    if (!formData.annualReport || !formData.meetingProxy || 
+        !formData.investmentOffers || !formData.dividendPreference) {
+      return false;
+    }
+
+    return true;
   };
 
   // Required field marker component
@@ -152,138 +116,307 @@ export default function Step6Page() {
         </div>
 
         {/* Progress Indicator */}
-        <ProgressIndicator totalSteps={7} currentStep={6} completedSteps={[1, 2, 3, 4, 5]} />
+        <ProgressIndicator totalSteps={8} currentStep={6} completedSteps={[1, 2, 3, 4, 5]} />
 
         {/* Main Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          {/* Investment Administration Details */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-portfolio-green-600 mb-4">
-              Direct Debit Authority
+              Investment Administration Details
             </h2>
             <p className="text-gray-600 mb-6">
-              Please provide your bank account details for direct debit arrangements.
+              Please advise where you would like us to send the following investment documents:
             </p>
 
-            {/* Bank Account Details */}
-            <div className="space-y-6">
+            {/* Annual Report */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Annual Report<RequiredMark />
+              </label>
+              <div className="grid grid-cols-4 gap-4">
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.annualReport === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'MainContact' ? null : 'MainContact')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.annualReport === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.annualReport === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.annualReport === 'MainContact' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.annualReport === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'Adviser' ? null : 'Adviser')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.annualReport === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.annualReport === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.annualReport === 'Adviser' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.annualReport === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'Both' ? null : 'Both')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.annualReport === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.annualReport === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.annualReport === 'Both' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.annualReport === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('annualReport', formData.annualReport === 'NotRequired' ? null : 'NotRequired')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.annualReport === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.annualReport === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.annualReport === 'NotRequired' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Meeting Proxy */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Meeting Proxy<RequiredMark />
+              </label>
+              <div className="grid grid-cols-4 gap-4">
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.meetingProxy === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'MainContact' ? null : 'MainContact')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.meetingProxy === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.meetingProxy === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.meetingProxy === 'MainContact' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.meetingProxy === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'Adviser' ? null : 'Adviser')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.meetingProxy === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.meetingProxy === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.meetingProxy === 'Adviser' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.meetingProxy === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'Both' ? null : 'Both')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.meetingProxy === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.meetingProxy === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.meetingProxy === 'Both' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.meetingProxy === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('meetingProxy', formData.meetingProxy === 'NotRequired' ? null : 'NotRequired')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.meetingProxy === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.meetingProxy === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.meetingProxy === 'NotRequired' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Investment Offers */}
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Investment Offers<RequiredMark />
+              </label>
+              <div className="grid grid-cols-4 gap-4">
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.investmentOffers === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'MainContact' ? null : 'MainContact')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.investmentOffers === 'MainContact' ? 'text-gray-900' : 'text-gray-500'}`}>Main Contact</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.investmentOffers === 'MainContact' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.investmentOffers === 'MainContact' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.investmentOffers === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'Adviser' ? null : 'Adviser')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.investmentOffers === 'Adviser' ? 'text-gray-900' : 'text-gray-500'}`}>Adviser</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.investmentOffers === 'Adviser' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.investmentOffers === 'Adviser' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.investmentOffers === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'Both' ? null : 'Both')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.investmentOffers === 'Both' ? 'text-gray-900' : 'text-gray-500'}`}>Both</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.investmentOffers === 'Both' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.investmentOffers === 'Both' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                    formData.investmentOffers === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                  }`}
+                  onClick={() => handleInputChange('investmentOffers', formData.investmentOffers === 'NotRequired' ? null : 'NotRequired')}
+                >
+                  <div className="flex-1">
+                    <div className={`font-medium ${formData.investmentOffers === 'NotRequired' ? 'text-gray-900' : 'text-gray-500'}`}>Not Required</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    formData.investmentOffers === 'NotRequired' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.investmentOffers === 'NotRequired' && (
+                      <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dividend Reinvestment Plan */}
+            <div>
+              <h2 className="text-2xl font-bold text-portfolio-green-600 mb-4">
+                Dividend Reinvestment Plan
+              </h2>
+              <p className="text-gray-600 mb-6">
+                If you invest in listed securities or unit trusts they may offer you the option to have the dividends/distributions paid in cash, or reinvested. Please advise us of your preference:
+              </p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Name<RequiredMark />
+                  Dividend Preference<RequiredMark />
                 </label>
-                <input
-                  type="text"
-                  value={formData.accountName}
-                  onChange={(e) => handleInputChange('accountName', e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  placeholder="Enter account name"
-                />
-              </div>
+                <div className="flex space-x-4">
+                  <div
+                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                      formData.dividendPreference === 'Cash' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                    }`}
+                    onClick={() => handleInputChange('dividendPreference', 'Cash')}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">Receive in cash</div>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.dividendPreference === 'Cash' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                    }`}>
+                      {formData.dividendPreference === 'Cash' && (
+                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    BSB<RequiredMark />
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.bsb}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                      handleInputChange('bsb', value);
-                    }}
-                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                    placeholder="Enter BSB (6 digits)"
-                    maxLength={6}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Account Number<RequiredMark />
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.accountNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 9);
-                      handleInputChange('accountNumber', value);
-                    }}
-                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                    placeholder="Enter account number"
-                    maxLength={9}
-                  />
-                </div>
-              </div>
-
-              {/* Direct Debit Authority Text */}
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6">
-                <p className="text-sm text-gray-700 mb-4">
-                  We request and authorise through PortfolioGuardian (User ID 419702) to arrange for any amount PortfolioGuardian may debit or charge to be debited through the Bulk Electronic Clearing System from the nominated bank account, subject to the terms and conditions of the Direct Debit Request Service Agreement.
-                </p>
-                <p className="text-sm text-gray-700 mb-4">
-                  By signing this Direct Debit Authority I/we acknowledge having read and understood the terms and conditions governing the debit arrangements between us and PortfolioGuardian as set out in this Authority and in the Direct Debit Request Service Agreement (outlined herein).
-                </p>
-                <p className="text-sm text-gray-700 mb-4">
-                  I/we authorise PortfolioGuardian to debit the nominated bank account, of which the details have been provided to PortfolioGuardian.
-                </p>
-                <p className="text-sm text-gray-700">
-                  I/we acknowledge that the first debit will occur within one month of signing the PortfolioGuardian application form, based on the relevant fee category as outlined in this client pack.
-                </p>
-              </div>
-
-              {/* Acknowledgment Checkbox */}
-              <div className="mt-6">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasAcknowledged}
-                    onChange={(e) => handleInputChange('hasAcknowledged', e.target.checked)}
-                    className="h-5 w-5 rounded border-gray-300 text-portfolio-green-600 focus:ring-portfolio-green-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    I acknowledge and agree to the Direct Debit Authority terms and conditions<RequiredMark />
-                  </span>
-                </label>
-              </div>
-
-              {/* Signatures */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Signature 1<RequiredMark />
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.signature1}
-                    onChange={(e) => handleInputChange('signature1', e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                    placeholder="Enter full name as signature"
-                  />
-                  <input
-                    type="date"
-                    value={formData.date1}
-                    onChange={(e) => handleInputChange('date1', e.target.value)}
-                    className="mt-2 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Signature 2 (if applicable)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.signature2}
-                    onChange={(e) => handleInputChange('signature2', e.target.value)}
-                    className="mt-1 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                    placeholder="Enter full name as signature"
-                  />
-                  <input
-                    type="date"
-                    value={formData.date2}
-                    onChange={(e) => handleInputChange('date2', e.target.value)}
-                    className="mt-2 block w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-portfolio-green-500 transition-colors"
-                  />
+                  <div
+                    className={`flex-1 relative flex items-center p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
+                      formData.dividendPreference === 'Reinvest' ? 'border-portfolio-green-500 bg-portfolio-green-50' : 'border-gray-200'
+                    }`}
+                    onClick={() => handleInputChange('dividendPreference', 'Reinvest')}
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">Re-invest</div>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 ${
+                      formData.dividendPreference === 'Reinvest' ? 'border-portfolio-green-500 bg-portfolio-green-500' : 'border-gray-300'
+                    }`}>
+                      {formData.dividendPreference === 'Reinvest' && (
+                        <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -322,10 +455,10 @@ export default function Step6Page() {
         {/* Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={isConfirmationOpen}
-          title="Restart Application"
-          message="Are you sure you want to restart the application? This will erase all completed information."
           onConfirm={handleRestartConfirm}
           onCancel={handleRestartCancel}
+          title="Restart Application"
+          message="Are you sure you want to restart the application? All your progress will be lost."
         />
       </div>
     </div>
