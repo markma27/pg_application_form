@@ -71,8 +71,8 @@ export default function ThankYouPage() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-medium text-gray-900">Email Confirmation</h4>
-                  <p className="text-sm text-gray-600">You&apos;ll receive email updates on your application status.</p>
+                  <h4 className="font-medium text-gray-900">Team Contact</h4>
+                  <p className="text-sm text-gray-600">Our team will contact you if they have any questions.</p>
                 </div>
               </div>
               
@@ -83,8 +83,8 @@ export default function ThankYouPage() {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-medium text-gray-900">Onboarding</h4>
-                  <p className="text-sm text-gray-600">Once approved, you&apos;ll receive detailed onboarding instructions.</p>
+                  <h4 className="font-medium text-gray-900">Onboarding Document</h4>
+                  <p className="text-sm text-gray-600">Once all done, you will receive our onboarding document.</p>
                 </div>
               </div>
             </div>
@@ -143,8 +143,8 @@ export default function ThankYouPage() {
               className="rounded-lg mr-3"
             />
           </div>
-          <p className="text-sm text-gray-500">
-            Secure investment portfolio administration and reporting services
+          <p className="text-sm text-gray-500 text-center">
+              Your Easy Investment Support Solution
           </p>
         </div>
       </div>

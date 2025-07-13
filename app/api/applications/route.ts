@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { encryptApplicationData } from '@/lib/encryption';
-import { notifyAccountingTeam } from '@/lib/notifications';
+import { notifyApplicationSubmission } from '@/lib/notifications';
 import crypto from 'crypto';
 
 // Add current time to dates if they don't have it
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     
     // Send notification to accounting team
     try {
-      await notifyAccountingTeam(applicationId, applicationData);
+      await notifyApplicationSubmission(applicationId, applicationData);
     } catch (notificationError) {
       console.error('Failed to notify accounting team:', notificationError);
       // Don't fail the application submission if notification fails
