@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyAccountingTeamAuth, logAccountingAccess } from '@/lib/auth'
 import { decryptApplicationData } from '@/lib/encryption'
-import { 
-  notifyClientApproval, 
-  notifyClientRejection, 
-  sendSystemAlert,
-  notifyAccountingTeam
-} from '@/lib/notifications'
+import { notifyAccountingTeam } from '@/lib/notifications'
 
 export async function GET(
   request: NextRequest,
@@ -103,13 +98,7 @@ export async function PUT(
           return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
         }
 
-        // Send approval notification to client
-        try {
-          await notifyClientApproval(application)
-        } catch (notificationError) {
-          console.error('Failed to send approval notification:', notificationError)
-          // Don't fail the approval if notification fails
-        }
+        // Note: Client approval notifications are handled separately if needed
 
         // Add approval note
         if (notes) {
@@ -142,13 +131,7 @@ export async function PUT(
           return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
         }
 
-        // Send rejection notification to client
-        try {
-          await notifyClientRejection(application, reason, notes)
-        } catch (notificationError) {
-          console.error('Failed to send rejection notification:', notificationError)
-          // Don't fail the rejection if notification fails
-        }
+        // Note: Client rejection notifications are handled separately if needed
 
         // Add rejection note
         await supabaseAdmin

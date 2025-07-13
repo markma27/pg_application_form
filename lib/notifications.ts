@@ -233,6 +233,7 @@ function generateEmailContent(template: string, data: Record<string, any>): stri
         </html>
       `
     
+
     default:
       return `
         <!DOCTYPE html>
@@ -305,4 +306,6 @@ export async function notifyApplicationSubmission(applicationId: string, applica
 // Legacy function for backward compatibility
 export async function notifyAccountingTeam(applicationId: string, applicationData: any) {
   return await notifyApplicationSubmission(applicationId, applicationData)
-} 
+}
+
+ 
