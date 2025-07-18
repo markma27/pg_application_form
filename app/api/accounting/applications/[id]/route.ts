@@ -32,16 +32,38 @@ export async function GET(
     // Get application notes
     const { data: notes } = await supabaseAdmin
       .from('accounting_notes')
-      .select('*')
+      .select(`
+        id,
+        notes,
+        created_at,
+        accounting_users!inner (
+          name
+        )
+      `)
       .eq('application_id', applicationId)
       .order('created_at', { ascending: false })
+
+    // Get application documents
+    const { data: documents } = await supabaseAdmin
+      .from('application_documents')
+      .select('*')
+      .eq('application_id', applicationId)
+
+    // Decrypt sensitive fields in application data
+    const decryptedApplication = decryptApplicationData(application)
+
+    // Add notes and documents to application data
+    const applicationWithDetails = {
+      ...decryptedApplication,
+      accounting_notes: notes || [],
+      application_documents: documents || []
+    }
 
     // Log access
     await logAccountingAccess(applicationId, authResult.userId!, 'view_application', request)
 
     return NextResponse.json({
-      application,
-      notes: notes || []
+      data: applicationWithDetails
     })
 
   } catch (error) {

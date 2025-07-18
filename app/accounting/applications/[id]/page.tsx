@@ -14,7 +14,7 @@ interface ApplicationData {
   australian_company_number?: string
   is_registered_for_gst: boolean
   holder_identification_number?: string
-  tax_file_number?: string | { decrypted: string }
+  tax_file_number?: string
   street_address: string
   city: string
   state: string
@@ -433,9 +433,7 @@ export default function ApplicationDetail() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Tax File Number</label>
                     <p className="mt-1 text-sm font-medium text-green-600">
-                      {typeof application.tax_file_number === 'string' 
-                        ? application.tax_file_number
-                        : application.tax_file_number.decrypted}
+                      {application.tax_file_number}
                     </p>
                   </div>
                 )}
